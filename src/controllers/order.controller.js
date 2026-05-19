@@ -204,7 +204,7 @@ const getMyOrders = async (req, res) => {
 const cancelOrder = async (req, res) => {
     try {
         const { orderId } = req.params;
-        const userId = req.user.orderId;
+        const userId = req.user.id;
 
         const [order] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
         if (order.length === 0) {
