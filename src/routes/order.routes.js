@@ -4,11 +4,11 @@ const { createOrder, createOrderFromCart, getAllOrders, getOrderById, getMyOrder
 const { authMiddleware } = require('@/middleware/auth.middleware');
 const { roleMiddleware } = require('@/middleware/role.middleware');
 
-router.post('/create-order', authMiddleware, createOrder);
+router.post('/create', authMiddleware, createOrder);
 router.post('/create/from-cart', authMiddleware, createOrderFromCart);
 router.get('/orders', authMiddleware, roleMiddleware, getAllOrders);
 router.get('/orders/:id', authMiddleware, getOrderById);
 router.get('/my-orders', authMiddleware, getMyOrders);
-router.post('/cancel-order/:id', authMiddleware, cancelOrder);
+router.post('/cancel/:id', authMiddleware, cancelOrder);
 
 module.exports = router;

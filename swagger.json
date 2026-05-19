@@ -1201,7 +1201,7 @@
         }
       }
     },
-    "/order/create-order": {
+    "/order/create": {
       "post": {
         "tags": [
           "Order"
@@ -1604,7 +1604,7 @@
         }
       }
     },
-    "/payment/create-payment": {
+    "/payment/create": {
       "post": {
         "tags": [
           "Payment"
@@ -2444,7 +2444,7 @@
         }
       }
     },
-    "/order/cancel-order/{id}": {
+    "/order/cancel/{id}": {
       "post": {
         "tags": [
           "Order"
@@ -2479,7 +2479,7 @@
         ]
       }
     },
-    "/payment/cancel-payment/{id}": {
+    "/payment/cancel/{id}": {
       "post": {
         "tags": [
           "Payment"

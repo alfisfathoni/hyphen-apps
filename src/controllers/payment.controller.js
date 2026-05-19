@@ -40,7 +40,7 @@ const createPayment = async (req, res) => {
     // Buat transaksi Midtrans
     const parameter = {
         transaction_details: {
-            order_id: `PAY-${Date.now()}`,
+            order_id: `PAY-${orderId}-${Date.now()}`,
             gross_amount: order.totalPrice,
         },
         customer_details: {
@@ -68,6 +68,7 @@ const createPayment = async (req, res) => {
         amount: order.totalPrice,
         paymentMethod: paymentMethod.toLowerCase(),
         status: 'pending',
+        midtransOrderId: parameter.transaction_details.order_id,
         snapToken: midtransResponse.token,       // ← untuk frontend
         snapUrl: midtransResponse.redirect_url, // ← link pembayaran
         createdAt: new Date().toISOString(),
@@ -116,12 +117,8 @@ const getPaymentMethods = (method) => {
 // POST /payment/webhook — dipanggil otomatis oleh Midtrans saat status berubah
 const handleWebhook = async (req, res) => {
     const { order_id, transaction_status, fraud_status } = req.body;
-
-    // Ambil orderId dari order_id midtrans (format: PAY-<orderId>-<timestamp>)
-    const orderId = order_id.split('-').slice(1, 6).join('-');
-
-    const payment = payments.find(p => p.orderId === orderId);
-    const order = orders.find(o => o.id === orderId);
+    const payment = payments.find(p => p.midtransOrderId === order_id);
+    const order = orders.find(o => o.id === payment?.orderId);
 
     if (!payment || !order) {
         return res.status(404).json({ message: 'Payment tidak ditemukan' });
