@@ -84,21 +84,26 @@ CREATE TABLE
 -- ============================================================
 CREATE TABLE
     products (
-        id VARCHAR(36) NOT NULL PRIMARY KEY, -- UUID
+        id VARCHAR(36) NOT NULL PRIMARY KEY,
         sellerID VARCHAR(36) NOT NULL,
         name VARCHAR(200) NOT NULL,
         description TEXT NOT NULL,
         price DECIMAL(15, 2) NOT NULL,
         category VARCHAR(100) NOT NULL,
-        weight INT NOT NULL, -- gram
+        weight INT NOT NULL,
         originCityId VARCHAR(20) NOT NULL,
         originCityLabel VARCHAR(200) NOT NULL,
-        imageUrl VARCHAR(500) NULL, -- Cloudinary URL
+        imageUrl VARCHAR(500) NULL,
+        status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+        condition ENUM('like_new', 'good', 'fair') NOT NULL DEFAULT 'good',
+        defects TEXT NULL,
+        rejectedReason TEXT NULL,
         createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (sellerID) REFERENCES users (id) ON DELETE CASCADE,
         INDEX idx_category (category),
-        INDEX idx_sellerID (sellerID)
+        INDEX idx_sellerID (sellerID),
+        INDEX idx_status (status)
     );
 
 -- ============================================================

@@ -11,13 +11,21 @@ const createProduct = async (req, res) => {
         const {
             name, description, price,
             sizes: rawSizes,
-            category, originCityLabel, originCityId, weight
+            category, originCityLabel, originCityId, weight,
+            item_condition, defects  // ← tambah ini
         } = req.body;
         const sellerID = req.user.id;
 
         if (!name || !description || !price || !rawSizes || !category || !originCityLabel || !originCityId || !weight) {
             return res.status(400).json({ message: 'Semua field wajib diisi' });
         }
+
+        // ← tambah validasi kondisi
+        const validConditions = ['like_new', 'good', 'fair'];
+        if (!item_condition || !validConditions.includes(item_condition)) {
+            return res.status(400).json({ message: 'Kondisi barang wajib diisi (like_new / good / fair)' });
+        }
+
         if (isNaN(price) || Number(price) <= 0) {
             return res.status(400).json({ message: 'Price harus berupa angka positif' });
         }
@@ -45,8 +53,9 @@ const createProduct = async (req, res) => {
         const id = uuidv4();
 
         await pool.query(
-            'INSERT INTO products (id, sellerID, name, description, price, category, weight, originCityId, originCityLabel, imageUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, sellerID, name, description, Number(price), category, Number(weight), originCityId, originCityLabel, imageUrl]
+            // ← tambah item_condition, defects, status otomatis 'pending'
+            'INSERT INTO products (id, sellerID, name, description, price, category, weight, originCityId, originCityLabel, imageUrl, item_condition, defects) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, sellerID, name, description, Number(price), category, Number(weight), originCityId, originCityLabel, imageUrl, item_condition, defects || null]
         );
 
         for (const s of parsedSizes) {
@@ -60,7 +69,7 @@ const createProduct = async (req, res) => {
         const [sizes_] = await pool.query('SELECT size, stock FROM product_sizes WHERE productId = ?', [id]);
 
         return res.status(201).json({
-            message: 'Product berhasil dibuat',
+            message: 'Product berhasil dibuat, menunggu persetujuan admin',  // ← ubah pesan
             data: formatProduct(product[0], sizes_)
         });
     } catch (error) {
@@ -74,12 +83,11 @@ const createProduct = async (req, res) => {
 const getAllProducts = async (req, res) => {
     try {
         const { name, category, sizes } = req.query;
-
         let query = `
             SELECT p.*, GROUP_CONCAT(ps.size) as availableSizes
             FROM products p
             LEFT JOIN product_sizes ps ON p.id = ps.productId
-            WHERE 1=1
+            WHERE p.status = 'approved'
         `;
         const params = [];
 
@@ -154,7 +162,7 @@ const getProductById = async (req, res) => {
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, price, sizes, category, originCityId, originCityLabel, weight } = req.body;
+        const { name, description, price, category, weight, originCityId, originCityLabel, item_condition, defects } = req.body;
 
         const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
         if (product.length === 0) {
@@ -165,18 +173,26 @@ const updateProduct = async (req, res) => {
         }
 
         await pool.query(
-            `UPDATE products SET
-                name = COALESCE(?, name),
-                description = COALESCE(?, description),
-                price = COALESCE(?, price),
-                category = COALESCE(?, category),
-                weight = COALESCE(?, weight),
-                originCityId = COALESCE(?, originCityId),
-                originCityLabel = COALESCE(?, originCityLabel)
-            WHERE id = ?`,
-            [name || null, description || null, price ? Number(price) : null,
-             category || null, weight ? Number(weight) : null,
-             originCityId || null, originCityLabel || null, id]
+            `
+    UPDATE products
+    SET
+        name = COALESCE(?, name),
+        description = COALESCE(?, description),
+        price = COALESCE(?, price),
+        category = COALESCE(?, category),
+        weight = COALESCE(?, weight),
+        originCityId = COALESCE(?, originCityId),
+        originCityLabel = COALESCE(?, originCityLabel),
+        item_condition = COALESCE(?, item_condition),
+        defects = COALESCE(?, defects),
+        status = "pending",
+        rejectedReason = NULL
+    WHERE id = ?
+    `,
+            [
+                name || null, description || null, price ? Number(price) : null, category || null, weight ? Number(weight) : null,
+                originCityId || null, originCityLabel || null, item_condition || null, defects || null, id
+            ]
         );
 
         if (sizes) {
@@ -230,4 +246,68 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-module.exports = { createProduct, getAllProducts, getProductById, updateProduct, deleteProduct };
+
+// ========================= ADMIN APPROVAL =========================
+
+// GET /admin/products/pending
+const getPendingProducts = async (req, res) => {
+    try {
+        const [products] = await pool.query(
+            'SELECT * FROM products WHERE status = "pending" ORDER BY createdAt ASC'
+        );
+        return res.status(200).json({
+            message: 'Produk menunggu persetujuan',
+            total: products.length,
+            data: products
+        });
+    } catch (error) {
+        console.error('getPendingProducts error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// PUT /admin/products/:id/approve
+const approveProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+        if (product.length === 0) return res.status(404).json({ message: 'Produk tidak ditemukan' });
+        if (product[0].status === 'approved') return res.status(400).json({ message: 'Produk sudah diapprove' });
+
+        await pool.query(
+            'UPDATE products SET status = "approved", rejectedReason = NULL WHERE id = ?',
+            [id]
+        );
+
+        return res.status(200).json({ message: 'Produk berhasil diapprove' });
+    } catch (error) {
+        console.error('approveProduct error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// PUT /admin/products/:id/reject
+const rejectProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        if (!reason) return res.status(400).json({ message: 'Alasan penolakan wajib diisi' });
+
+        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+        if (product.length === 0) return res.status(404).json({ message: 'Produk tidak ditemukan' });
+
+        await pool.query(
+            'UPDATE products SET status = "rejected", rejectedReason = ? WHERE id = ?',
+            [reason, id]
+        );
+
+        return res.status(200).json({ message: 'Produk berhasil direject', reason });
+    } catch (error) {
+        console.error('rejectProduct error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+module.exports = { createProduct, getAllProducts, getProductById, updateProduct, deleteProduct, getPendingProducts, approveProduct, rejectProduct };
