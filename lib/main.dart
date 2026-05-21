@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'categories.dart';
+import 'HomePage.dart';
 
 
 void main() {
@@ -249,7 +250,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const CategoriesScreen(),
+                              builder: (context) => const HomePage(),
                             ),
                           );
                         },

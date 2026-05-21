@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'HomePage.dart';
 
 void main() => runApp(const HypenApp());
 
@@ -237,18 +238,28 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             bottom: -15, // Ensure it fully covers the bottom gap
             left: 0,
             right: 0,
-            child: SizedBox(
-              height: 120, // Made the brown thing taller
-              child: CustomPaint(
-                painter: _BottomTabPainter(color: primaryBrown),
-                child: const Align(
-                  alignment: Alignment.topCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 28), // Pushed icon down a bit to match the taller tab
-                    child: Icon(
-                      Icons.home_outlined, // Placeholder house outline
-                      color: Colors.white,
-                      size: 32,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HomePage(),
+                  ),
+                );
+              },
+              child: SizedBox(
+                height: 120, // Made the brown thing taller
+                child: CustomPaint(
+                  painter: _BottomTabPainter(color: primaryBrown),
+                  child: const Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 28), // Pushed icon down a bit to match the taller tab
+                      child: Icon(
+                        Icons.home_outlined, // Placeholder house outline
+                        color: Colors.white,
+                        size: 32,
+                      ),
                     ),
                   ),
                 ),
