@@ -51,6 +51,7 @@ class _HomePageState extends State<HomePage> {
                   IconButton(
                     icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black),
                     onPressed: () {
+                      ScaffoldMessenger.of(context).clearSnackBars();
                       Navigator.push(
                         context,
                         MaterialPageRoute(

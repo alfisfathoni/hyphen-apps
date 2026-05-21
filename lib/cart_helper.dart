@@ -230,12 +230,14 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
               // Show snackbar confirmation
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
+                  behavior: SnackBarBehavior.floating,
                   content: Text('${widget.product.title} ($_selectedSize) dimasukkan ke keranjang.'),
                   duration: const Duration(seconds: 3),
                   action: SnackBarAction(
                     label: 'Lihat Keranjang',
                     textColor: Colors.amber.shade400,
                     onPressed: () {
+                      ScaffoldMessenger.of(context).clearSnackBars();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
