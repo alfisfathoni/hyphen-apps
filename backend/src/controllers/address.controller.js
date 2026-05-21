@@ -3,7 +3,6 @@ const pool = require('@/config/db');
 const { validatePhone, validatePostalCode } = require('@/helpers/address.helpers');
 
 // ========================= ADD ALAMAT =========================
-// POST /address/add
 const addAddress = async (req, res) => {
     try {
         const { label, recipientName, phone, address, postalCode, isDefault, destinationCityId, destinationCityLabel } = req.body;
@@ -42,7 +41,6 @@ const addAddress = async (req, res) => {
 };
 
 // ========================= DELETE ALAMAT =========================
-// DELETE /address/delete/:addressId
 const deleteAddress = async (req, res) => {
     try {
         const { addressId } = req.params;
@@ -78,7 +76,6 @@ const deleteAddress = async (req, res) => {
 };
 
 // ========================= GET ALL ADDRESSES =========================
-// GET /address/addresses
 const getAllAddresses = async (req, res) => {
     try {
         const [addresses] = await pool.query(
@@ -93,7 +90,6 @@ const getAllAddresses = async (req, res) => {
 };
 
 // ========================= GET ADDRESS DETAIL =========================
-// GET /address/detail/:addressId
 const getAddressDetail = async (req, res) => {
     try {
         const { addressId } = req.params;
@@ -115,7 +111,6 @@ const getAddressDetail = async (req, res) => {
 };
 
 // ========================= SET DEFAULT ALAMAT =========================
-// PUT /address/setDefault/:addressId
 const setDefaultAddress = async (req, res) => {
     try {
         const { addressId } = req.params;
@@ -142,7 +137,6 @@ const setDefaultAddress = async (req, res) => {
 };
 
 // ========================= UPDATE ALAMAT =========================
-// PUT /address/update/:addressId
 const updateAddress = async (req, res) => {
     try {
         const { addressId } = req.params;

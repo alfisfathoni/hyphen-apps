@@ -3,11 +3,8 @@ const pool = require('@/config/db');
 const { getOrderDetail } = require('@/helpers/order.helpers');
 
 // ================== CREATE ORDER =====================
-// POST /order/create-order
-// Body: { productId }
 const createOrder = async (req, res) => {
     try {
-        // FIX 1: productId dari body, bukan params
         const { productId } = req.body;
         const buyerID = req.user.id;
 
@@ -65,10 +62,8 @@ const createOrder = async (req, res) => {
 };
 
 // ================== CREATE ORDER DARI CART ==================
-// POST /order/create/from-cart
 const createOrderFromCart = async (req, res) => {
     try {
-        // FIX 2: konsisten pakai buyerID
         const buyerID = req.user.id;
 
         const [cart] = await pool.query('SELECT * FROM cart_items WHERE userId = ?', [buyerID]);
@@ -88,8 +83,6 @@ const createOrderFromCart = async (req, res) => {
                 errors.push(`Produk tidak ditemukan`);
                 continue;
             }
-
-            // FIX 3: barang bekas — cek stok > 0, tidak perlu cek quantity
             const [selectedSize] = await pool.query(
                 'SELECT * FROM product_sizes WHERE productId = ? AND size = ? AND stock > 0',
                 [item.productId, item.size.toUpperCase()]
@@ -101,13 +94,11 @@ const createOrderFromCart = async (req, res) => {
 
             const orderId = uuidv4();
 
-            // FIX 4: kolom sesuai schema (buyerID, price) — hapus quantity & totalPrice
             await pool.query(
                 'INSERT INTO orders (id, buyerID, productId, size, price, status) VALUES (?, ?, ?, ?, ?, "pending")',
                 [orderId, buyerID, item.productId, item.size.toUpperCase(), product[0].price, 'pending']
             );
 
-            // FIX 5: stok jadi 0, bukan stock - quantity
             await pool.query(
                 'UPDATE product_sizes SET stock = 0 WHERE productId = ? AND size = ?',
                 [item.productId, item.size.toUpperCase()]
@@ -132,7 +123,6 @@ const createOrderFromCart = async (req, res) => {
 };
 
 // ========================= GET ALL ORDERS (ADMIN) =========================
-// GET /order/orders
 const getAllOrders = async (req, res) => {
     try {
         const [orders] = await pool.query('SELECT id FROM orders ORDER BY orderDate DESC');
@@ -151,7 +141,6 @@ const getAllOrders = async (req, res) => {
 };
 
 // ========================= GET ORDER BY ID =========================
-// GET /order/orders/:id
 const getOrderById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -178,12 +167,10 @@ const getOrderById = async (req, res) => {
 };
 
 // ========================= MY ORDERS =========================
-// GET /order/my-orders
 const getMyOrders = async (req, res) => {
     try {
         const buyerID = req.user.id;
 
-        // FIX 7: kolom buyerID, bukan userId
         const [orders] = await pool.query(
             'SELECT id FROM orders WHERE buyerID = ? ORDER BY orderDate DESC',
             [buyerID]
@@ -207,7 +194,6 @@ const getMyOrders = async (req, res) => {
 };
 
 // ========================= CANCEL ORDER =========================
-// POST /order/cancel/:orderId
 const cancelOrder = async (req, res) => {
     try {
         const { orderId } = req.params;
@@ -229,7 +215,6 @@ const cancelOrder = async (req, res) => {
             });
         }
 
-        // FIX 9: kembalikan stok jadi 1 (bukan stock + quantity)
         await pool.query(
             'UPDATE product_sizes SET stock = 1 WHERE productId = ? AND size = ?',
             [order[0].productId, order[0].size]

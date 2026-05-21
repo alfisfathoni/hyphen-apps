@@ -7,7 +7,6 @@ const snap = new midtransClient.Snap({
 });
 
 // ========================= WEBHOOK MIDTRANS =========================
-// POST /payment/webhook
 const handleWebhook = async (req, res) => {
     try {
         const { order_id, transaction_status, fraud_status } = req.body;
@@ -74,7 +73,6 @@ const handleWebhook = async (req, res) => {
 };
 
 // ========================= RIWAYAT PEMBAYARAN (USER) =========================
-// GET /payment/my-payments
 const getPayments = async (req, res) => {
     try {
         const [payments] = await pool.query(
@@ -94,7 +92,6 @@ const getPayments = async (req, res) => {
 };
 
 // ========================= SEMUA PEMBAYARAN (ADMIN) =========================
-// GET /payment/payments
 const getAllPayments = async (req, res) => {
     try {
         const [payments] = await pool.query('SELECT * FROM payments ORDER BY createdAt DESC');
@@ -111,7 +108,6 @@ const getAllPayments = async (req, res) => {
 };
 
 // ========================= DETAIL PEMBAYARAN =========================
-// GET /payment/payments/:id
 const getPaymentById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -140,7 +136,6 @@ const getPaymentById = async (req, res) => {
 };
 
 // ========================= CANCEL PAYMENT =========================
-// POST /payment/cancel-payment/:paymentId
 const cancelPayment = async (req, res) => {
     try {
         const { paymentId } = req.params;

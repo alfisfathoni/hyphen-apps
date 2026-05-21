@@ -152,17 +152,16 @@ const getAllProducts = async (req, res) => {
 };
 
 // ========================= GET PRODUCT BY ID =========================
-// GET /product/:id
 const getProductById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { productId } = req.params;
 
-        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [productId]);
         if (product.length === 0) {
             return res.status(404).json({ message: 'Product tidak ditemukan' });
         }
 
-        const [sizes] = await pool.query('SELECT size, stock FROM product_sizes WHERE productId = ?', [id]);
+        const [sizes] = await pool.query('SELECT size, stock FROM product_sizes WHERE productId = ?', [productId]);
 
         return res.status(200).json({
             message: 'Berhasil ambil product',
@@ -175,13 +174,12 @@ const getProductById = async (req, res) => {
 };
 
 // ========================= UPDATE PRODUCT =========================
-// PUT /product/update/:id
 const updateProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { productId } = req.params;
         const { name, description, price, sizes: rawSizes, category, weight, originCityId, originCityLabel, item_condition, defects } = req.body;
 
-        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [productId]);
         if (product.length === 0) {
             return res.status(404).json({ message: 'Product tidak ditemukan' });
         }
@@ -215,7 +213,7 @@ const updateProduct = async (req, res) => {
                 weight ? Number(weight) : null,
                 originCityId || null, originCityLabel || null,
                 item_condition || null, defects || null,
-                id
+                productId
             ]
         );
 
@@ -223,13 +221,13 @@ const updateProduct = async (req, res) => {
             const { sizeList, error: sizeError } = parseSizes(rawSizes);
             if (sizeError) return res.status(400).json({ message: sizeError });
 
-            await pool.query('DELETE FROM product_sizes WHERE productId = ?', [id]);
-            const sizeValues = sizeList.map(size => [id, size, 1]);
+            await pool.query('DELETE FROM product_sizes WHERE productId = ?', [productId]);
+            const sizeValues = sizeList.map(size => [productId, size, 1]);
             await pool.query('INSERT INTO product_sizes (productId, size, stock) VALUES ?', [sizeValues]);
         }
 
-        const [updated] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
-        const [updatedSizes] = await pool.query('SELECT size, stock FROM product_sizes WHERE productId = ?', [id]);
+        const [updated] = await pool.query('SELECT * FROM products WHERE id = ?', [productId]);
+        const [updatedSizes] = await pool.query('SELECT size, stock FROM product_sizes WHERE productId = ?', [productId]);
 
         return res.status(200).json({
             message: 'Product berhasil diperbarui',
@@ -242,12 +240,11 @@ const updateProduct = async (req, res) => {
 };
 
 // ========================= DELETE PRODUCT =========================
-// DELETE /product/delete/:id
 const deleteProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { productId } = req.params;
 
-        const [product] = await pool.query('SELECT id, sellerID FROM products WHERE id = ?', [id]);
+        const [product] = await pool.query('SELECT id, sellerID FROM products WHERE id = ?', [productId]);
         if (product.length === 0) {
             return res.status(404).json({ message: 'Product tidak ditemukan' });
         }
@@ -255,7 +252,7 @@ const deleteProduct = async (req, res) => {
             return res.status(403).json({ message: 'Anda tidak memiliki akses untuk menghapus produk ini' });
         }
 
-        await pool.query('DELETE FROM products WHERE id = ?', [id]);
+        await pool.query('DELETE FROM products WHERE id = ?', [productId]);
 
         return res.status(200).json({ message: 'Product berhasil dihapus' });
     } catch (error) {
@@ -265,15 +262,14 @@ const deleteProduct = async (req, res) => {
 };
 
 // ========================= ORDER PRODUCT =========================
-// POST /product/:id/order
 const orderProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { productId } = req.params;
         const buyerID = req.user.id;
 
         const [product] = await pool.query(
             'SELECT * FROM products WHERE id = ? AND status = "approved"',
-            [id]
+            [productId]
         );
         if (product.length === 0) {
             return res.status(404).json({ message: 'Product tidak ditemukan atau belum disetujui' });
@@ -285,7 +281,7 @@ const orderProduct = async (req, res) => {
 
         const [sizeRow] = await pool.query(
             'SELECT * FROM product_sizes WHERE productId = ? AND stock > 0 LIMIT 1',
-            [id]
+            [productId]
         );
         if (sizeRow.length === 0) {
             return res.status(400).json({ message: 'Stok produk sudah habis' });
@@ -295,20 +291,20 @@ const orderProduct = async (req, res) => {
 
         await pool.query(
             'UPDATE product_sizes SET stock = 0 WHERE productId = ? AND size = ?',
-            [id, size]
+            [productId, size]
         );
 
         const orderId = uuidv4();
         await pool.query(
             'INSERT INTO orders (id, buyerID, productId, size, price, status) VALUES (?, ?, ?, ?, ?, "pending")',
-            [orderId, buyerID, id, size, product[0].price]
+            [orderId, buyerID, productId, size, product[0].price]
         );
 
         return res.status(201).json({
             message: 'Order berhasil dibuat',
             data: {
                 orderId,
-                productId: id,
+                productId: productId,
                 productName: product[0].name,
                 size,
                 price: product[0].price
@@ -356,15 +352,15 @@ const getPendingProducts = async (req, res) => {
 // PUT /admin/products/:id/approve
 const approveProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { productId } = req.params;
 
-        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [productId]);
         if (product.length === 0) return res.status(404).json({ message: 'Produk tidak ditemukan' });
         if (product[0].status === 'approved') return res.status(400).json({ message: 'Produk sudah diapprove' });
 
         await pool.query(
             'UPDATE products SET status = "approved", rejectedReason = NULL WHERE id = ?',
-            [id]
+            [productId]
         );
 
         return res.status(200).json({ message: 'Produk berhasil diapprove' });
@@ -377,17 +373,17 @@ const approveProduct = async (req, res) => {
 // PUT /admin/products/:id/reject
 const rejectProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { productId } = req.params;
         const { reason } = req.body;
 
         if (!reason) return res.status(400).json({ message: 'Alasan penolakan wajib diisi' });
 
-        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+        const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [productId]);
         if (product.length === 0) return res.status(404).json({ message: 'Produk tidak ditemukan' });
 
         await pool.query(
             'UPDATE products SET status = "rejected", rejectedReason = ? WHERE id = ?',
-            [reason, id]
+            [reason, productId]
         );
 
         return res.status(200).json({ message: 'Produk berhasil direject', reason });

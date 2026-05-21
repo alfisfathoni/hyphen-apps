@@ -1,31 +1,32 @@
-const { v4: uuidv4 } = require('uuid');
 const pool = require('@/config/db');
 
 const getOrderDetail = async (orderId) => {
     const [rows] = await pool.query(`
         SELECT 
-            o.id            AS orderId,
-            o.status        AS orderStatus,
-            o.quantity,
+            o.id              AS orderId,
+            o.status          AS orderStatus,
             o.size,
-            o.totalPrice,
+            o.price,
+            o.addressId,
             o.orderDate,
             o.updatedAt,
 
-            u.id            AS userId,
+            u.id              AS buyerId,
             u.username,
             u.email,
 
-            p.id            AS productId,
-            p.name          AS productName,
-            p.description   AS productDescription,
-            p.price         AS productPrice,
-            p.category      AS productCategory,
-            p.imageUrl      AS productImage,
-            p.weight        AS productWeight,
+            p.id              AS productId,
+            p.name            AS productName,
+            p.description     AS productDescription,
+            p.price           AS productPrice,
+            p.category        AS productCategory,
+            p.imageUrl        AS productImage,
+            p.weight          AS productWeight,
+            p.item_condition  AS productCondition,
+            p.defects         AS productDefects,
             p.originCityLabel AS productOriginCity
         FROM orders o
-        JOIN users u    ON o.userId    = u.id
+        JOIN users u    ON o.buyerID   = u.id
         JOIN products p ON o.productId = p.id
         WHERE o.id = ?
     `, [orderId]);
@@ -39,11 +40,11 @@ const getOrderDetail = async (orderId) => {
         orderStatus: row.orderStatus,
         orderDate: row.orderDate,
         updatedAt: row.updatedAt,
-        quantity: row.quantity,
         size: row.size,
-        totalPrice: row.totalPrice,
-        user: {
-            userId: row.userId,
+        price: row.price,
+        addressId: row.addressId || null,
+        buyer: {
+            buyerId: row.buyerId,
             username: row.username,
             email: row.email,
         },
@@ -55,6 +56,8 @@ const getOrderDetail = async (orderId) => {
             productCategory: row.productCategory,
             productImage: row.productImage,
             productWeight: row.productWeight,
+            productCondition: row.productCondition,
+            productDefects: row.productDefects || null,
             productOriginCity: row.productOriginCity,
         }
     };

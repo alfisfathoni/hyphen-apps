@@ -1353,34 +1353,6 @@
         }
       }
     },
-    "/shipping/provinces": {
-      "get": {
-        "tags": [
-          "Shipping"
-        ],
-        "summary": "Cari provinsi/kota/kecamatan",
-        "parameters": [
-          {
-            "name": "search",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Nama provinsi/destinasi, contoh: jawa barat"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Data destinasi berhasil diambil"
-          },
-          "400": {
-            "description": "Parameter search wajib diisi"
-          }
-        },
-        "description": "Cari data destinasi/provinsi dari RajaOngkir. Parameter search wajib diisi."
-      }
-    },
     "/shipping/cities": {
       "get": {
         "tags": [
@@ -1588,7 +1560,7 @@
         }
       }
     },
-    "/shipping/{id}/status": {
+    "/shipping/{shipmentId}/status": {
       "patch": {
         "tags": [
           "Shipping"
@@ -1601,7 +1573,7 @@
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "shipmentId",
             "in": "path",
             "required": true,
             "schema": {
@@ -2896,7 +2868,7 @@
         }
       }
     },
-    "/user/photo": {
+    "/user/profile/photo": {
       "put": {
         "tags": [
           "User"

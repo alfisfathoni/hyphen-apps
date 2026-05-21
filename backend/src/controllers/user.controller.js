@@ -74,7 +74,6 @@ const updateProfile = async (req, res) => {
         const { fullname, phone, dateOfBirth, location, username, email } = req.body;
         const userId = req.user.id;
 
-        // Validasi input
         if (phone && !/^[0-9]{10,13}$/.test(phone)) {
             return res.status(400).json({ message: 'Format nomor telepon tidak valid' });
         }

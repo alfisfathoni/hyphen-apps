@@ -10,7 +10,6 @@ const REFRESH_SECRET_KEY = process.env.REFRESH_SECRET_KEY;
 
 
 //========================= REGISTER =======================
-// POST /auth/register
 const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -62,7 +61,6 @@ const register = async (req, res) => {
 };
 
 //========================= VERIFY EMAIL =======================
-// POST /auth/verify-email
 const verifyEmail = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -108,7 +106,6 @@ const verifyEmail = async (req, res) => {
 };
 
 //========================= RESEND OTP =======================
-// POST /auth/resend-otp
 const resendOTP = async (req, res) => {
     try {
         const { email } = req.body;
@@ -149,7 +146,6 @@ const resendOTP = async (req, res) => {
 };
 
 //======================= LOGIN =======================
-// POST /auth/login
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -174,7 +170,6 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'Password salah' });
         }
 
-        // Cek apakah user sudah punya profil
         const [profile] = await pool.query(
             'SELECT id FROM user_profiles WHERE userId = ?',
             [user.id]
@@ -212,7 +207,6 @@ const login = async (req, res) => {
 };
 
 //========================= LOGOUT =======================
-// POST /auth/logout
 const logout = async (req, res) => {
     try {
         const { refreshToken } = req.body;
@@ -231,7 +225,6 @@ const logout = async (req, res) => {
 };
 
 //==================== FORGOT PASSWORD ===================
-// POST /auth/forgot-password
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -269,7 +262,6 @@ const forgotPassword = async (req, res) => {
 };
 
 //========================= RESET PASSWORD =======================
-// POST /auth/reset-password
 const resetPassword = async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
@@ -304,7 +296,6 @@ const resetPassword = async (req, res) => {
 };
 
 //========================= REFRESH TOKEN =======================
-// POST /auth/refresh-token
 const refreshAccessToken = async (req, res) => {
     try {
         const { refreshToken } = req.body;

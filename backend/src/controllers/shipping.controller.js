@@ -1,24 +1,6 @@
 const pool = require('@/config/db');
 const { rajaongkirGet, rajaongkirPost } = require('@/helpers/shipping.helpers');
 
-// ========================= CARI PROVINSI =========================
-// GET /shipping/provinces?search=<nama>
-const getProvinces = async (req, res) => {
-    try {
-        const { search } = req.query;
-        if (!search) {
-            return res.status(400).json({ message: 'Parameter search wajib diisi. Contoh: ?search=jawa barat' });
-        }
-
-        const data = await rajaongkirGet('/destination/domestic-destination', { search });
-
-        return res.status(200).json({ message: 'Data destinasi berhasil diambil', data });
-    } catch (error) {
-        console.error('getProvinces error:', error);
-        return res.status(500).json({ message: 'Gagal mengambil data provinsi', error: error.message });
-    }
-};
-
 // ========================= CARI KOTA =========================
 // GET /shipping/cities?search=<nama>
 const getCities = async (req, res) => {
@@ -42,7 +24,6 @@ const getCities = async (req, res) => {
 };
 
 // ========================= HITUNG ONGKIR =========================
-// POST /shipping/cost
 const calculateShipping = async (req, res) => {
     try {
         const { originCityId, destinationCityId, weightGram, courier } = req.body;
@@ -79,7 +60,6 @@ const calculateShipping = async (req, res) => {
 };
 
 // ========================= MY SHIPMENTS =========================
-// GET /shipping/my-shipments
 const getMyShipments = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -101,7 +81,6 @@ const getMyShipments = async (req, res) => {
 };
 
 // ========================= ALL SHIPMENTS (ADMIN) =========================
-// GET /shipping/all-shipments
 const getAllShipments = async (req, res) => {
     try {
         const [shipments] = await pool.query('SELECT * FROM shipments ORDER BY createdAt DESC');
@@ -118,10 +97,9 @@ const getAllShipments = async (req, res) => {
 };
 
 // ========================= UPDATE STATUS SHIPMENT (ADMIN) =========================
-// PATCH /shipping/:id/status
 const updateShipmentStatus = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { shipmentId } = req.params;
         const { status } = req.body;
 
         const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -129,13 +107,13 @@ const updateShipmentStatus = async (req, res) => {
             return res.status(400).json({ message: 'Status tidak valid', validStatuses });
         }
 
-        const [shipment] = await pool.query('SELECT * FROM shipments WHERE id = ?', [id]);
+        const [shipment] = await pool.query('SELECT * FROM shipments WHERE id = ?', [shipmentId]);
         if (shipment.length === 0) {
             return res.status(404).json({ message: 'Shipment tidak ditemukan' });
         }
 
         const statusLower = status.toLowerCase();
-        await pool.query('UPDATE shipments SET status = ? WHERE id = ?', [statusLower, id]);
+        await pool.query('UPDATE shipments SET status = ? WHERE id = ?', [statusLower, shipmentId]);
 
         if (statusLower === 'delivered') {
             await pool.query("UPDATE orders SET status = 'delivered' WHERE id = ?", [shipment[0].orderId]);
@@ -143,7 +121,7 @@ const updateShipmentStatus = async (req, res) => {
             await pool.query("UPDATE orders SET status = 'cancelled' WHERE id = ?", [shipment[0].orderId]);
         }
 
-        const [updated] = await pool.query('SELECT * FROM shipments WHERE id = ?', [id]);
+        const [updated] = await pool.query('SELECT * FROM shipments WHERE id = ?', [shipmentId]);
 
         return res.status(200).json({ message: 'Status pengiriman berhasil diperbarui', data: updated[0] });
     } catch (error) {
@@ -152,4 +130,4 @@ const updateShipmentStatus = async (req, res) => {
     }
 };
 
-module.exports = { getProvinces, getCities, calculateShipping, getMyShipments, getAllShipments, updateShipmentStatus };
+module.exports = { getCities, calculateShipping, getMyShipments, getAllShipments, updateShipmentStatus };

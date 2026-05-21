@@ -5,7 +5,6 @@ const cloudinary = require('@/config/cloudinary');
 
 
 // ================== BUAT / AMBIL ROOM CHAT ==================
-// POST /chat/room
 const getOrCreateRoom = async (req, res) => {
     try {
         const buyerId = req.user.id;
@@ -48,7 +47,6 @@ const getOrCreateRoom = async (req, res) => {
 };
 
 // ================== GET SEMUA ROOM MILIK USER ==================
-// GET /chat/rooms
 const getMyRooms = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -83,7 +81,6 @@ const getMyRooms = async (req, res) => {
 };
 
 // ================== GET MESSAGES DI ROOM ==================
-// GET /chat/:roomId/messages
 const getMessages = async (req, res) => {
     try {
         const { roomId } = req.params;
@@ -125,7 +122,6 @@ const getMessages = async (req, res) => {
 };
 
 // ================== KIRIM PESAN (REST fallback) ==================
-// POST /chat/:roomId/send
 const sendMessage = async (req, res) => {
     try {
         const { roomId } = req.params;

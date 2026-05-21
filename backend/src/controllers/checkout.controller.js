@@ -16,7 +16,6 @@ const snap = new midtransClient.Snap({
 });
 
 // ================== CHECKOUT ==================
-// POST /checkout
 const checkout = async (req, res) => {
     try {
         const { orderId, addressId, courierCode, service, notes } = req.body;

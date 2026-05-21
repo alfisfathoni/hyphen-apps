@@ -7,17 +7,15 @@ const {upload} = require('@/middleware/image.up.middleware');
 
 
 router.post('/create', authMiddleware, upload.single('image'), createProduct);
-router.put('/update/:id', authMiddleware, updateProduct);
-router.delete('/delete/:id', authMiddleware, deleteProduct);
+router.put('/update/:productId', authMiddleware, updateProduct);
+router.delete('/delete/:productId', authMiddleware, deleteProduct);
 //buat admin
 router.get('/pending', authMiddleware, roleMiddleware, getPendingProducts);
-router.put('/:id/approve', authMiddleware, roleMiddleware, approveProduct);
-router.put('/:id/reject', authMiddleware, roleMiddleware, rejectProduct);
+router.put('/:productId/approve', authMiddleware, roleMiddleware, approveProduct);
+router.put('/:productId/reject', authMiddleware, roleMiddleware, rejectProduct);
 
 //ini buat public/user
 router.get('/products', getAllProducts);
-router.get('/:id', getProductById);
-
-
+router.get('/:productId', getProductById);
 
 module.exports = router;

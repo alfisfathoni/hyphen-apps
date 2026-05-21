@@ -12,7 +12,7 @@ const requireProfile = async (req, res, next) => {
         if (profile.length === 0) {
             return res.status(403).json({
                 message: 'Lengkapi profil Anda terlebih dahulu',
-                redirectTo: '/user/profile' // Frontend gunakan ini untuk redirect ke halaman profil
+                redirectTo: '/profile/create'
             });
         }
 

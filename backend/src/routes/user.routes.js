@@ -9,7 +9,7 @@ const { getProfile, createProfile, updateProfile, updatePhotoProfile, changePass
 router.get('/profile', authMiddleware, getProfile);
 router.post('/create', authMiddleware, createProfile);
 router.put('/update', authMiddleware, requireProfile, updateProfile);
-router.put('/photo', authMiddleware, requireProfile, upload.single('photo'), updatePhotoProfile);
+router.put('/profile/photo', authMiddleware, requireProfile, upload.single('photo'), updatePhotoProfile);
 router.put('/change-password', authMiddleware, changePassword);
 router.delete('/delete', authMiddleware, deleteUser);
 
