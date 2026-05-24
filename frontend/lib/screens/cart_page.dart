@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'cart_manager.dart';
-import 'CheckoutPage.dart';
+import 'package:hyphen/managers/cart_manager.dart';
+import 'package:hyphen/screens/checkout_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});

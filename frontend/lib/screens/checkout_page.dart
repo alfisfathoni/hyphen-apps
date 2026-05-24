@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'cart_manager.dart';
-import 'PaymentPage.dart';
+import 'package:hyphen/managers/cart_manager.dart';
+import 'package:hyphen/screens/payment_page.dart';
 
 // Address model
 class AddressInfo {

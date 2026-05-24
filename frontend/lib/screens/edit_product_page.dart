@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'product_manager.dart';
-import 'mock_products.dart';
+import 'package:hyphen/managers/product_manager.dart';
+import 'package:hyphen/data/mock_products.dart';
 
 class EditProductPage extends StatefulWidget {
   final Product product;

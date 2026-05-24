@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'cart_manager.dart';
-import 'CheckoutPage.dart'; // import PaymentOption
-import 'order_manager.dart';
+import 'package:hyphen/managers/cart_manager.dart';
+import 'package:hyphen/screens/checkout_page.dart'; // import PaymentOption
+import 'package:hyphen/managers/order_manager.dart';
 
 class PaymentPage extends StatefulWidget {
   final List<CartItem> checkoutItems;

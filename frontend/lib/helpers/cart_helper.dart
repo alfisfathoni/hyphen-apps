@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'cart_manager.dart';
-import 'mock_products.dart';
-import 'CartPage.dart';
+import 'package:hyphen/managers/cart_manager.dart';
+import 'package:hyphen/data/mock_products.dart';
+import 'package:hyphen/screens/cart_page.dart';
 
 class CartHelper {
   static void showSizeSelector(BuildContext context, Product product) {

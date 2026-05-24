@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'SearchResultsPage.dart';
+import 'package:hyphen/screens/search_results_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});

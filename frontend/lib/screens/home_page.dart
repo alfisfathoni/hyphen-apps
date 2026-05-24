@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'UserProfile.dart';
-import 'SearchPage.dart';
-import 'CartPage.dart';
-import 'cart_manager.dart';
-import 'cart_helper.dart';
-import 'mock_products.dart';
-import 'SellPage.dart';
-import 'product_manager.dart';
-import 'AdminPage.dart';
-import 'UserDrawer.dart';
-import 'InboxPage.dart';
+import 'package:hyphen/screens/user_profile.dart';
+import 'package:hyphen/screens/search_page.dart';
+import 'package:hyphen/screens/cart_page.dart';
+import 'package:hyphen/managers/cart_manager.dart';
+import 'package:hyphen/helpers/cart_helper.dart';
+import 'package:hyphen/data/mock_products.dart';
+import 'package:hyphen/screens/sell_page.dart';
+import 'package:hyphen/managers/product_manager.dart';
+import 'package:hyphen/screens/admin_page.dart';
+import 'package:hyphen/widgets/user_drawer.dart';
+import 'package:hyphen/screens/inbox_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

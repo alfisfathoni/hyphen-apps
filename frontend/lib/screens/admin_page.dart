@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'product_manager.dart';
-import 'order_manager.dart';
-import 'mock_products.dart';
+import 'package:hyphen/managers/product_manager.dart';
+import 'package:hyphen/managers/order_manager.dart';
+import 'package:hyphen/data/mock_products.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'order_manager.dart';
+import 'package:hyphen/managers/order_manager.dart';
 
 class OrderDetailSellerPage extends StatefulWidget {
   final String orderId;

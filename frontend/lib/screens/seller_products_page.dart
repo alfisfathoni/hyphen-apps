@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'product_manager.dart';
-import 'SellPage.dart';
-import 'EditProductPage.dart';
-import 'OrderManagementPage.dart';
+import 'package:hyphen/managers/product_manager.dart';
+import 'package:hyphen/screens/sell_page.dart';
+import 'package:hyphen/screens/edit_product_page.dart';
+import 'package:hyphen/screens/order_management_page.dart';
 
 class SellerProductsPage extends StatefulWidget {
   const SellerProductsPage({super.key});

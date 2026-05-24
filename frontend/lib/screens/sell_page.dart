@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'product_manager.dart';
-import 'mock_products.dart';
-import 'widgets/PhotoUploaderBox.dart';
-import 'widgets/SellingTipsBox.dart';
+import 'package:hyphen/managers/product_manager.dart';
+import 'package:hyphen/data/mock_products.dart';
+import 'package:hyphen/widgets/photo_uploader_box.dart';
+import 'package:hyphen/widgets/selling_tips_box.dart';
 
 class SellPage extends StatefulWidget {
   final VoidCallback? onUploadSuccess;

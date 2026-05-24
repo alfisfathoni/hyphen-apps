@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'HomePage.dart';
+import 'package:hyphen/screens/home_page.dart';
 
 void main() => runApp(const HypenApp());
 

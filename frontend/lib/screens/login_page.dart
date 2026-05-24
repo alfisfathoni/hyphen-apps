@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'auth_manager.dart';
-import 'register.dart';
-import 'reset_password.dart';
+import 'package:hyphen/managers/auth_manager.dart';
+import 'package:hyphen/screens/register_page.dart';
+import 'package:hyphen/screens/reset_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

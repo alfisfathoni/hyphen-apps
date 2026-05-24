@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'mock_products.dart';
-import 'cart_helper.dart';
-import 'product_manager.dart';
+import 'package:hyphen/data/mock_products.dart';
+import 'package:hyphen/helpers/cart_helper.dart';
+import 'package:hyphen/managers/product_manager.dart';
 
 class SearchResultsPage extends StatefulWidget {
   final String? initialQuery;

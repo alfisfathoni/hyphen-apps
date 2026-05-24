@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'EditProfilePage.dart';
-import 'OrderHistoryPage.dart';
-import 'SellerProductsPage.dart';
-import 'auth_manager.dart';
-import 'login.dart';
+import 'package:hyphen/screens/edit_profile_page.dart';
+import 'package:hyphen/screens/order_history_page.dart';
+import 'package:hyphen/screens/seller_products_page.dart';
+import 'package:hyphen/managers/auth_manager.dart';
+import 'package:hyphen/screens/login_page.dart';
 
 class UserProfile extends StatelessWidget {
   final VoidCallback? onJualPressed;

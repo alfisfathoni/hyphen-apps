@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'mock_products.dart';
+import 'package:hyphen/data/mock_products.dart';
 
 class ProductManager extends ChangeNotifier {
   // Singleton instance

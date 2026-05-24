@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'order_manager.dart';
-import 'OrderDetailSellerPage.dart';
+import 'package:hyphen/managers/order_manager.dart';
+import 'package:hyphen/screens/order_detail_seller_page.dart';
 
 class OrderManagementPage extends StatefulWidget {
   const OrderManagementPage({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'auth_manager.dart';
-import 'login.dart';
+import 'package:hyphen/managers/auth_manager.dart';
+import 'package:hyphen/screens/login_page.dart';
 
 class UserDrawer extends StatelessWidget {
   final int currentTab;
