@@ -1,3 +1,4 @@
+// Force nodemon restart
 require('dotenv').config();
 require('module-alias/register');
 const { initAdmin } = require('@/data/users.data');
@@ -42,7 +43,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // === Socket.IO ===
 io.on('connection', (socket) => {
-  console.log('✅ User connected:', socket.id);
+  console.log(' User connected:', socket.id);
 
   socket.on('join_room', (roomId) => {
     socket.join(roomId);
@@ -109,7 +110,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ User disconnected:', socket.id);
+    console.log(' User disconnected:', socket.id);
   });
 });
 
@@ -145,7 +146,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running successfully
+  console.log(` Server running successfully
 Environment : ${process.env.NODE_ENV || 'development'}
 Server URL  : http://localhost:${PORT}/api/v1
 Swagger Docs: http://localhost:${PORT}/api-docs`);

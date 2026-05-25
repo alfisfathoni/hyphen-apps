@@ -5,6 +5,7 @@ import 'package:hyphen/managers/checkout_manager.dart';
 import 'package:hyphen/models/city.dart';
 import 'package:hyphen/widgets/city_autocomplete_field.dart';
 import 'package:hyphen/screens/payment_page.dart';
+import 'package:hyphen/managers/address_manager.dart';
 
 // Address model
 class AddressInfo {
@@ -107,9 +108,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // Default payment method is QRIS
     _selectedPayment = PaymentOption(name: 'QRIS', type: 'QRIS');
 
-    // Clear SnackBar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Clear SnackBar & auto-load default address
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ScaffoldMessenger.of(context).clearSnackBars();
+      
+      try {
+        await AddressManager().fetchAddresses();
+        final defAddress = AddressManager().defaultAddress;
+        if (defAddress != null && mounted) {
+          setState(() {
+            _address = AddressInfo(
+              id: defAddress.id,
+              name: defAddress.recipientName,
+              phone: defAddress.phone,
+              fullAddress: defAddress.fullAddress,
+              cityId: defAddress.destinationCityId,
+              cityLabel: defAddress.destinationCityLabel,
+            );
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading default address: $e');
+      }
     });
   }
 
@@ -1181,7 +1201,7 @@ class _CheckoutPengisianPageState extends State<CheckoutPengisianPage> {
     );
   }
 
-  void _saveAndReturn() {
+  void _saveAndReturn() async {
     if (_nameController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty ||
         _addressController.text.trim().isEmpty) {
@@ -1194,12 +1214,51 @@ class _CheckoutPengisianPageState extends State<CheckoutPengisianPage> {
       return;
     }
 
-    final address = AddressInfo(
-      name: _nameController.text.trim(),
+    const Color brandBrown = Color(0xFF8C7355);
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: brandBrown),
+      ),
+    );
+
+    final error = await AddressManager().addAddress(
+      label: 'Utama',
+      recipientName: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
-      fullAddress: _addressController.text.trim(),
-      cityId: _selectedCity?.id.toString(),
-      cityLabel: _selectedCity?.label,
+      address: _addressController.text.trim(),
+      postalCode: '11480',
+      destinationCityId: _selectedCity?.id.toString() ?? '1',
+      destinationCityLabel: _selectedCity?.label ?? 'Jakarta',
+      isDefault: true,
+    );
+
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading dialog
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan alamat: $error')),
+      );
+      return;
+    }
+
+    // Find the newly added address in the list
+    final newAddress = AddressManager().addresses.firstWhere(
+      (a) => a.recipientName == _nameController.text.trim() && a.fullAddress == _addressController.text.trim(),
+      orElse: () => AddressManager().addresses.first,
+    );
+
+    final address = AddressInfo(
+      id: newAddress.id,
+      name: newAddress.recipientName,
+      phone: newAddress.phone,
+      fullAddress: newAddress.fullAddress,
+      cityId: newAddress.destinationCityId,
+      cityLabel: newAddress.destinationCityLabel,
     );
 
     Navigator.pop(context, address);

@@ -83,7 +83,7 @@ const rajaongkirGet = async (path, params = {}) => {
         if (meta.code !== 200) throw new Error(meta.message);
         return data;
     } catch (err) {
-        console.warn('⚠️ RajaOngkir GET failed, using mock cities fallback:', err.message);
+        console.warn('️ RajaOngkir GET failed, using mock cities fallback:', err.message);
         const searchQuery = params.search || '';
         return MOCK_CITIES.filter(c => c.label.toLowerCase().includes(searchQuery.toLowerCase().trim()));
     }
@@ -106,7 +106,7 @@ const rajaongkirPost = async (path, payload = {}) => {
         if (meta.code !== 200) throw new Error(meta.message);
         return data;
     } catch (err) {
-        console.warn('⚠️ RajaOngkir POST failed, using mock costs fallback:', err.message);
+        console.warn('️ RajaOngkir POST failed, using mock costs fallback:', err.message);
         if (path.includes('/calculate/')) {
             return getMockShippingCosts(payload);
         }

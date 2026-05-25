@@ -179,11 +179,41 @@ class AuthManager extends ChangeNotifier {
         }
         
         await fetchProfile();
+        ProductManager().fetchProducts(force: true);
         notifyListeners();
         return true;
       }
     } on DioException catch (e) {
       print('Login error: ${e.response?.data}');
+    } catch (e) {
+      print('Unexpected error: $e');
+    }
+    return false;
+  }
+
+  Future<bool> loginWithGoogle(String emailInput) async {
+    try {
+      final response = await ApiClient().dio.post('/auth/google-signin', data: {
+        'idToken': 'mock_$emailInput',
+      });
+
+      if (response.statusCode == 200) {
+        _isLoggedIn = true;
+        _email = response.data['data']['email'];
+        _userName = response.data['data']['username'];
+        
+        final accessToken = response.data['accessToken'];
+        if (accessToken != null) {
+          await ApiClient().saveToken(accessToken);
+        }
+        
+        await fetchProfile();
+        ProductManager().fetchProducts(force: true);
+        notifyListeners();
+        return true;
+      }
+    } on DioException catch (e) {
+      print('Google login error: ${e.response?.data}');
     } catch (e) {
       print('Unexpected error: $e');
     }
@@ -271,6 +301,7 @@ class AuthManager extends ChangeNotifier {
     CartManager().clearLocalCache();
     AdminManager().clearCache();
     await ApiClient().clearToken();
+    ProductManager().fetchProducts(force: true);
     notifyListeners();
   }
 }

@@ -29,6 +29,8 @@ class CheckoutManager extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    String? createdOrderId;
+
     try {
       // 1. Create the order
       final orderResponse = await ApiClient().dio.post('/order/create', data: {
@@ -39,11 +41,11 @@ class CheckoutManager extends ChangeNotifier {
         return CheckoutResult(success: false, message: 'Failed to create order');
       }
 
-      final String orderId = orderResponse.data['data']['orderId'];
+      createdOrderId = orderResponse.data['data']['orderId'];
 
       // 2. Checkout to get Snap Token
       final checkoutResponse = await ApiClient().dio.post('/checkout/checkout', data: {
-        'orderId': orderId,
+        'orderId': createdOrderId,
         'addressId': addressId,
         'courierCode': courierCode,
         'service': service,
@@ -57,16 +59,39 @@ class CheckoutManager extends ChangeNotifier {
         );
       }
 
+      // If we reach here, checkout failed. Revert/cancel order.
+      if (createdOrderId != null) {
+        try {
+          await ApiClient().dio.post('/order/cancel/$createdOrderId');
+        } catch (cancelError) {
+          debugPrint('Error cancelling order after failed checkout: $cancelError');
+        }
+      }
+
       return CheckoutResult(
         success: false, 
         message: checkoutResponse.data['message'] ?? 'Checkout failed'
       );
     } on dio.DioException catch (e) {
+      if (createdOrderId != null) {
+        try {
+          await ApiClient().dio.post('/order/cancel/$createdOrderId');
+        } catch (cancelError) {
+          debugPrint('Error cancelling order after exception: $cancelError');
+        }
+      }
       return CheckoutResult(
         success: false,
         message: e.response?.data['message'] ?? e.message,
       );
     } catch (e) {
+      if (createdOrderId != null) {
+        try {
+          await ApiClient().dio.post('/order/cancel/$createdOrderId');
+        } catch (cancelError) {
+          debugPrint('Error cancelling order after exception: $cancelError');
+        }
+      }
       return CheckoutResult(success: false, message: e.toString());
     } finally {
       _isLoading = false;

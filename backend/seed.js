@@ -30,15 +30,27 @@ async function seed() {
     try {
         console.log('Seeding products...');
         
-        // Find admin user to act as the seller
-        const [users] = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+        // Find seeded users to act as the sellers
+        const [users] = await pool.query("SELECT id, email FROM users WHERE email IN ('user1@gmail.com', 'user2@gmail.com')");
         if (users.length === 0) {
-            console.log('Admin user not found. Please run the backend first to generate admin.');
+            console.log('Seeded users not found. Please run the user seeder first.');
             return;
         }
-        const sellerId = users[0].id;
 
+        const userMap = {};
+        users.forEach(u => {
+            userMap[u.email] = u.id;
+        });
+
+        const user1Id = userMap['user1@gmail.com'] || users[0].id;
+        const user2Id = userMap['user2@gmail.com'] || (users[1] ? users[1].id : users[0].id);
+
+        let index = 0;
         for (const p of mockProducts) {
+            // Alternate products between user1 and user2
+            const sellerId = index % 2 === 0 ? user1Id : user2Id;
+            index++;
+
             // Insert product
             await pool.query(
                 'INSERT IGNORE INTO products (id, sellerId, name, description, price, category, weight, originCityId, originCityLabel, imageUrl, item_condition, defects, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',

@@ -12,7 +12,7 @@ const initAdmin = async () => {
         'INSERT INTO users (id, username, email, password, role, isVerified) VALUES (?, ?, ?, ?, ?, ?)',
         [uuidv4(), 'admin123', 'admin123@gmail.com', hashedPassword, 'admin', 1]
     );
-    console.log('✅ Admin berhasil dibuat');
+    console.log(' Admin berhasil dibuat');
 };
 
 module.exports = { initAdmin };

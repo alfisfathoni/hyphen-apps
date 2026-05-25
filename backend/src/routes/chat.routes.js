@@ -1,7 +1,7 @@
 const {getIo} = require('@/config/socket');
 const express = require('express');
 const router  = express.Router();
-const { getOrCreateRoom, getMyRooms, getMessages, sendMessage, uploadChatImage } = require('@/controllers/chat.controller');
+const { getOrCreateRoom, getMyRooms, getMessages, sendMessage, uploadChatImage, proposePrice, respondNegotiation } = require('@/controllers/chat.controller');
 const { authMiddleware } = require('@/middleware/auth.middleware');
 const {upload}  = require('@/middleware/image.up.middleware');
 
@@ -11,5 +11,7 @@ router.get('/rooms', authMiddleware, getMyRooms);
 router.get('/:roomId/messages', authMiddleware, getMessages);
 router.post('/:roomId/send', authMiddleware, sendMessage);
 router.post('/upload', authMiddleware, upload.single('image'), uploadChatImage);
+router.post('/negotiate/propose', authMiddleware, proposePrice);
+router.post('/negotiate/respond', authMiddleware, respondNegotiation);
 
 module.exports = router;

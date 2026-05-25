@@ -1,10 +1,10 @@
-# 🛒 HYPEN E-Commerce Backend
+#  HYPEN E-Commerce Backend
 
 Backend API untuk aplikasi E-Commerce **HYPEN** menggunakan Node.js dan Express.
 
 ---
 
-## 📦 Tech Stack
+##  Tech Stack
 
 * **Node.js** — Runtime environment
 * **Express.js** — Backend framework
@@ -22,7 +22,7 @@ Backend API untuk aplikasi E-Commerce **HYPEN** menggunakan Node.js dan Express.
 
 ---
 
-# 📁 Struktur Folder
+#  Struktur Folder
 
 ```bash
 MHSBe2/
@@ -45,7 +45,7 @@ MHSBe2/
 
 ---
 
-# ⚙️ Instalasi
+# ️ Instalasi
 
 ## 1. Clone Repository
 
@@ -62,7 +62,7 @@ npm install
 
 ---
 
-# ▶️ Menjalankan Project
+# ️ Menjalankan Project
 
 ## Development Mode
 
@@ -88,7 +88,7 @@ npm run start
 
 ---
 
-# 🌐 Menjalankan Ngrok (Untuk Midtrans Callback)
+#  Menjalankan Ngrok (Untuk Midtrans Callback)
 
 Jalankan terminal kedua:
 
@@ -100,12 +100,12 @@ Gunakan URL dari Ngrok untuk kebutuhan callback/payment gateway.
 
 ---
 
-# 🚀 Server Running
+#  Server Running
 
 Setelah server berhasil berjalan, akan muncul informasi berikut:
 
 ```txt
-🚀 Server running successfully
+ Server running successfully
 Environment : development
 Server URL  : http://localhost:3000/api/v1
 Swagger Docs: http://localhost:3000/api-docs
@@ -113,7 +113,7 @@ Swagger Docs: http://localhost:3000/api-docs
 
 ---
 
-# 🔐 Default Admin Account
+#  Default Admin Account
 
 ```txt
 Email : admin123@gmail.com
@@ -122,7 +122,7 @@ Password : admin123
 
 ---
 
-# ⚡ Environment Variables
+#  Environment Variables
 
 Buat file `.env` lalu isi seperti berikut:
 
@@ -150,7 +150,7 @@ SMTP_PASS=
 
 ---
 
-# 📡 Socket.io Client (Frontend)
+#  Socket.io Client (Frontend)
 
 Untuk fitur chat realtime pada frontend:
 
@@ -160,7 +160,7 @@ npm install socket.io-client
 
 ---
 
-# 📥 Import Path Alias
+#  Import Path Alias
 
 Contoh penggunaan alias import:
 
@@ -170,7 +170,7 @@ import productData from '@/data/product.data'
 
 ---
 
-# 🛑 Menghentikan Server
+#  Menghentikan Server
 
 ```bash
 CTRL + C
@@ -178,7 +178,7 @@ CTRL + C
 
 ---
 
-# 🚀 Features
+#  Features
 
 * Authentication & Authorization
 * JWT Access & Refresh Token
