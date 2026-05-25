@@ -12,6 +12,7 @@ class AuthManager extends ChangeNotifier {
   AuthManager._internal();
 
   bool _isLoggedIn = false;
+  String _userId = '';
   String _userName = 'Guest';
   String _email = '';
   String _fullName = '';
@@ -21,6 +22,7 @@ class AuthManager extends ChangeNotifier {
   String _photoUrl = '';
 
   bool get isLoggedIn => _isLoggedIn;
+  String get userId => _userId;
   String get userName => _userName;
   String get email => _email;
   String get fullName => _fullName.isEmpty ? _userName : _fullName;
@@ -45,6 +47,7 @@ class AuthManager extends ChangeNotifier {
       final response = await ApiClient().dio.get('/user/profile');
       if (response.statusCode == 200) {
         final data = response.data['data'];
+        _userId = data['id']?.toString() ?? '';
         _userName = data['username'] ?? '';
         _email = data['email'] ?? '';
         _fullName = data['fullname'] ?? '';
@@ -247,6 +250,7 @@ class AuthManager extends ChangeNotifier {
 
   Future<void> logout() async {
     _isLoggedIn = false;
+    _userId = '';
     _userName = 'Guest';
     _email = '';
     _fullName = '';

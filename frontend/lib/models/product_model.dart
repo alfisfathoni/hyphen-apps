@@ -1,5 +1,6 @@
 class Product {
   final String id;
+  final String sellerId;
   final String title;
   final String brand; // Backend doesn't explicitly store brand, mapping to category or default
   final double price; 
@@ -19,6 +20,7 @@ class Product {
     required this.condition,
     required this.category,
     this.isVerified = true,
+    this.sellerId = '',
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class Product {
 
     return Product(
       id: json['productId']?.toString() ?? '',
+      sellerId: json['sellerID']?.toString() ?? '',
       title: json['productName'] ?? 'Unknown Product',
       brand: 'Hyphen', // Fallback brand
       price: parsedPrice,
@@ -74,6 +77,7 @@ class Product {
     String? condition,
     String? category,
     bool? isVerified,
+    String? sellerId,
   }) {
     return Product(
       id: id ?? this.id,
@@ -85,6 +89,7 @@ class Product {
       condition: condition ?? this.condition,
       category: category ?? this.category,
       isVerified: isVerified ?? this.isVerified,
+      sellerId: sellerId ?? this.sellerId,
     );
   }
 

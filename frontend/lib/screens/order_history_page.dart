@@ -17,6 +17,9 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   void initState() {
     super.initState();
     _orderManager.addListener(_onOrdersChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _orderManager.fetchOrders();
+    });
   }
 
   @override

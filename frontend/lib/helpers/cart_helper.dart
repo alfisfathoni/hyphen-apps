@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hyphen/managers/cart_manager.dart';
 import 'package:hyphen/data/mock_products.dart';
 import 'package:hyphen/screens/cart_page.dart';
+import 'package:hyphen/managers/chat_manager.dart';
+import 'package:hyphen/managers/auth_manager.dart';
+import 'package:hyphen/screens/inbox_page.dart';
 
 class CartHelper {
   static void showSizeSelector(BuildContext context, Product product) {
@@ -29,6 +32,7 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
   late String _selectedSize;
   int _quantity = 1;
   bool _isAddingToCart = false;
+  bool _isStartingChat = false;
 
   @override
   void initState() {
@@ -237,80 +241,165 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
           ),
           const SizedBox(height: 32),
 
-          // Add to Cart Button
-          ElevatedButton(
-            onPressed: _isAddingToCart
-                ? null
-                : () async {
-                    setState(() {
-                      _isAddingToCart = true;
-                    });
-                    final error = await CartManager().addItem(
-                      widget.product,
-                      size: _selectedSize,
-                      quantity: _quantity,
-                    );
-                    
-                    if (!mounted) return;
-                    
-                    setState(() {
-                      _isAddingToCart = false;
-                    });
+          // Buttons Row: Chat & Add to Cart
+          Row(
+            children: [
+              // Chat Button
+              Container(
+                height: 54,
+                width: 54,
+                decoration: BoxDecoration(
+                  border: Border.all(color: brandBrown, width: 1.5),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: _isStartingChat
+                    ? const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(color: brandBrown, strokeWidth: 2),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.chat_bubble_outline, color: brandBrown, size: 22),
+                        onPressed: () async {
+                          setState(() {
+                            _isStartingChat = true;
+                          });
 
-                    if (error != null) {
-                      Navigator.pop(context); // Close bottom sheet
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error)),
-                      );
-                      return;
-                    }
+                          final auth = AuthManager();
+                          if (!auth.isLoggedIn) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Silakan login terlebih dahulu.')),
+                            );
+                            setState(() {
+                              _isStartingChat = false;
+                            });
+                            return;
+                          }
 
-                    Navigator.pop(context); // Close bottom sheet
+                          if (auth.userId == widget.product.sellerId) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Anda tidak bisa chat dengan diri sendiri.')),
+                            );
+                            setState(() {
+                              _isStartingChat = false;
+                            });
+                            return;
+                          }
 
-                    // Show snackbar confirmation
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        behavior: SnackBarBehavior.floating,
-                        content: Text('${widget.product.title} ($_selectedSize) dimasukkan ke keranjang.'),
-                        duration: const Duration(seconds: 3),
-                        action: SnackBarAction(
-                          label: 'Lihat Keranjang',
-                          textColor: Colors.amber.shade400,
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).clearSnackBars();
+                          final room = await ChatManager().createOrGetRoom(
+                            widget.product.sellerId,
+                            widget.product.id,
+                          );
+
+                          if (!mounted) return;
+                          setState(() {
+                            _isStartingChat = false;
+                          });
+
+                          if (room != null) {
+                            Navigator.pop(context); // Close bottom sheet
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const CartPage(),
+                                builder: (context) => ChatDetailPage(
+                                  roomId: room['id'],
+                                  name: room['otherUsername'] ?? 'Seller',
+                                  avatarUrl: room['otherPhotoUrl'],
+                                  productName: room['productName'] ?? widget.product.title,
+                                  productPrice: room['productPrice'] != null
+                                      ? double.tryParse(room['productPrice'].toString())
+                                      : widget.product.price,
+                                  productImageUrl: room['productImageUrl'] ?? widget.product.imageUrl,
+                                ),
                               ),
                             );
-                          },
-                        ),
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Gagal memulai chat.')),
+                            );
+                          }
+                        },
                       ),
-                    );
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
               ),
-              elevation: 0,
-            ),
-            child: _isAddingToCart
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                  )
-                : Text(
-                    'Tambah ke Keranjang',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
+              const SizedBox(width: 12),
+
+              // Add to Cart Button
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isAddingToCart
+                      ? null
+                      : () async {
+                          setState(() {
+                            _isAddingToCart = true;
+                          });
+                          final error = await CartManager().addItem(
+                            widget.product,
+                            size: _selectedSize,
+                            quantity: _quantity,
+                          );
+                          
+                          if (!mounted) return;
+                          
+                          setState(() {
+                            _isAddingToCart = false;
+                          });
+
+                          if (error != null) {
+                            Navigator.pop(context); // Close bottom sheet
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(error)),
+                            );
+                            return;
+                          }
+
+                          Navigator.pop(context); // Close bottom sheet
+
+                          // Show snackbar confirmation
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              content: Text('${widget.product.title} ($_selectedSize) dimasukkan ke keranjang.'),
+                              duration: const Duration(seconds: 3),
+                              action: SnackBarAction(
+                                label: 'Lihat Keranjang',
+                                textColor: Colors.amber.shade400,
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).clearSnackBars();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const CartPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 0,
                   ),
+                  child: _isAddingToCart
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          'Tambah ke Keranjang',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -4,6 +4,33 @@ const { getIo } = require('@/config/socket');
 const cloudinary = require('@/config/cloudinary');
 
 
+const getRoomWithDetails = async (roomId, currentUserId) => {
+    const [rooms] = await db.query(
+        `SELECT cr.*, 
+            u.username AS otherUsername,
+            up.fullname AS otherFullname,
+            up.photoUrl AS otherPhotoUrl,
+            p.name AS productName,
+            p.imageUrl AS productImageUrl,
+            p.price AS productPrice,
+            (SELECT cm.message FROM chat_messages cm 
+             WHERE cm.roomId = cr.id 
+             ORDER BY cm.createdAt DESC LIMIT 1) as lastMessage,
+            (SELECT cm.createdAt FROM chat_messages cm 
+             WHERE cm.roomId = cr.id 
+             ORDER BY cm.createdAt DESC LIMIT 1) as lastMessageAt,
+            (SELECT COUNT(*) FROM chat_messages cm 
+             WHERE cm.roomId = cr.id AND cm.isRead = 0 AND cm.senderId != ?) as unreadCount
+         FROM chat_rooms cr
+         JOIN users u ON u.id = CASE WHEN cr.buyerId = ? THEN cr.sellerId ELSE cr.buyerId END
+         LEFT JOIN user_profiles up ON up.userId = u.id
+         LEFT JOIN products p ON p.id = cr.productId
+         WHERE cr.id = ?`,
+        [currentUserId, currentUserId, currentUserId, roomId]
+    );
+    return rooms[0];
+};
+
 // ================== BUAT / AMBIL ROOM CHAT ==================
 const getOrCreateRoom = async (req, res) => {
     try {
@@ -21,10 +48,16 @@ const getOrCreateRoom = async (req, res) => {
         );
 
         if (existing.length > 0) {
+            const richRoom = await getRoomWithDetails(existing[0].id, buyerId);
             return res.status(200).json({
                 message: 'Room chat ditemukan',
-                data: existing[0]
+                data: richRoom
             });
+        }
+
+        // Cek jika mencoba chat diri sendiri
+        if (buyerId === sellerId) {
+            return res.status(400).json({ message: 'Tidak bisa membuat room chat dengan diri sendiri' });
         }
 
         // Buat room baru
@@ -34,9 +67,10 @@ const getOrCreateRoom = async (req, res) => {
             [id, buyerId, sellerId, productId]
         );
 
+        const richRoom = await getRoomWithDetails(id, buyerId);
         return res.status(201).json({
             message: 'Room chat berhasil dibuat',
-            data: { id, buyerId, sellerId, productId }
+            data: richRoom
         });
     } catch (error) {
         return res.status(500).json({
@@ -53,6 +87,12 @@ const getMyRooms = async (req, res) => {
 
         const [rooms] = await db.query(
             `SELECT cr.*, 
+                u.username AS otherUsername,
+                up.fullname AS otherFullname,
+                up.photoUrl AS otherPhotoUrl,
+                p.name AS productName,
+                p.imageUrl AS productImageUrl,
+                p.price AS productPrice,
                 (SELECT cm.message FROM chat_messages cm 
                  WHERE cm.roomId = cr.id 
                  ORDER BY cm.createdAt DESC LIMIT 1) as lastMessage,
@@ -62,9 +102,12 @@ const getMyRooms = async (req, res) => {
                 (SELECT COUNT(*) FROM chat_messages cm 
                  WHERE cm.roomId = cr.id AND cm.isRead = 0 AND cm.senderId != ?) as unreadCount
              FROM chat_rooms cr
+             JOIN users u ON u.id = CASE WHEN cr.buyerId = ? THEN cr.sellerId ELSE cr.buyerId END
+             LEFT JOIN user_profiles up ON up.userId = u.id
+             LEFT JOIN products p ON p.id = cr.productId
              WHERE cr.buyerId = ? OR cr.sellerId = ?
              ORDER BY lastMessageAt DESC`,
-            [userId, userId, userId]
+            [userId, userId, userId, userId, userId]
         );
 
         return res.status(200).json({
@@ -98,7 +141,11 @@ const getMessages = async (req, res) => {
 
         // Ambil semua pesan
         const [messages] = await db.query(
-            'SELECT * FROM chat_messages WHERE roomId = ? ORDER BY createdAt ASC',
+            `SELECT cm.*, u.username AS senderName 
+             FROM chat_messages cm
+             JOIN users u ON cm.senderId = u.id
+             WHERE cm.roomId = ? 
+             ORDER BY cm.createdAt ASC`,
             [roomId]
         );
 

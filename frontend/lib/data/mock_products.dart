@@ -11,6 +11,7 @@ const List<Product> mockProducts = [
     size: 'L',
     condition: 'Sangat Baik',
     category: 'Formal',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_2',
@@ -21,6 +22,7 @@ const List<Product> mockProducts = [
     size: 'XL',
     condition: 'Sangat Baik',
     category: 'Daily',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_3',
@@ -31,6 +33,7 @@ const List<Product> mockProducts = [
     size: 'M',
     condition: 'Cukup Baik',
     category: 'Daily',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_4',
@@ -41,6 +44,7 @@ const List<Product> mockProducts = [
     size: 'L',
     condition: 'Sangat Baik',
     category: 'Formal',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_5',
@@ -51,6 +55,7 @@ const List<Product> mockProducts = [
     size: 'M',
     condition: 'Baik',
     category: 'Pria',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_6',
@@ -61,6 +66,7 @@ const List<Product> mockProducts = [
     size: 'S',
     condition: 'Sangat Baik',
     category: 'Wanita',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_7',
@@ -71,6 +77,7 @@ const List<Product> mockProducts = [
     size: '42',
     condition: 'Sangat Baik',
     category: 'Daily',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_8',
@@ -81,6 +88,7 @@ const List<Product> mockProducts = [
     size: 'L',
     condition: 'Baik',
     category: 'Daily',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_9',
@@ -91,6 +99,7 @@ const List<Product> mockProducts = [
     size: 'M',
     condition: 'Baik',
     category: 'Pria',
+    sellerId: '813926c1-10e8-436d-923f-708f05a0cd0c',
   ),
   Product(
     id: 'prod_10',
@@ -101,5 +110,6 @@ const List<Product> mockProducts = [
     size: '41',
     condition: 'Sangat Baik',
     category: 'Daily',
+    sellerId: '1ae314ba-579c-11f1-a931-c035320bdeee',
   ),
 ];

@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:hyphen/data/mock_products.dart';
 import 'package:hyphen/managers/cart_manager.dart';
+import 'package:hyphen/services/api_client.dart';
+import 'package:hyphen/models/product_model.dart';
+import 'package:dio/dio.dart';
 
 enum OrderStatus {
   processing,
@@ -26,6 +29,57 @@ class OrderItem {
     required this.status,
     required this.orderDate,
   });
+
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    OrderStatus status = OrderStatus.processing;
+    final statusStr = json['orderStatus']?.toString().toLowerCase() ?? 'pending';
+    
+    if (statusStr == 'shipping') {
+      status = OrderStatus.shipping;
+    } else if (statusStr == 'disputed' || statusStr == 'cancelled') {
+      status = OrderStatus.disputed;
+    }
+
+    final productJson = json['product'] ?? {};
+    final product = Product.fromJson({
+      'productId': productJson['productId'],
+      'productName': productJson['productName'],
+      'productDescription': productJson['productDescription'],
+      'productPrice': productJson['productPrice'],
+      'productCategory': productJson['productCategory'],
+      'productImage': productJson['productImage'],
+      'item_condition': productJson['productCondition'],
+      'status': 'approved',
+    });
+
+    double parsedPrice = 0.0;
+    if (json['price'] != null) {
+      if (json['price'] is String) {
+        parsedPrice = double.tryParse(json['price']) ?? 0.0;
+      } else {
+        parsedPrice = (json['price'] as num).toDouble();
+      }
+    }
+
+    DateTime parsedDate = DateTime.now();
+    if (json['orderDate'] != null) {
+      try {
+        parsedDate = DateTime.parse(json['orderDate']);
+      } catch (e) {
+        print('Error parsing date: $e');
+      }
+    }
+
+    return OrderItem(
+      orderId: json['orderId']?.toString() ?? '',
+      product: product,
+      size: json['size']?.toString() ?? 'M',
+      quantity: 1, 
+      price: parsedPrice,
+      status: status,
+      orderDate: parsedDate,
+    );
+  }
 }
 
 class OrderManager extends ChangeNotifier {
@@ -36,6 +90,22 @@ class OrderManager extends ChangeNotifier {
   final List<OrderItem> _orders = [];
 
   List<OrderItem> get orders => List.unmodifiable(_orders);
+
+  Future<void> fetchOrders() async {
+    try {
+      final response = await ApiClient().dio.get('/order/my-orders');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] ?? [];
+        _orders.clear();
+        _orders.addAll(data.map((json) => OrderItem.fromJson(json)).toList());
+        notifyListeners();
+      }
+    } on DioException catch (e) {
+      print('Error fetching orders: ${e.response?.data}');
+    } catch (e) {
+      print('Unexpected error fetching orders: $e');
+    }
+  }
 
   OrderManager._internal() {
     // Seed initial mock orders based on the Figma "order history 1" image
