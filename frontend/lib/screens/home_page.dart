@@ -12,6 +12,7 @@ import 'package:hyphen/screens/admin_page.dart';
 import 'package:hyphen/widgets/user_drawer.dart';
 import 'package:hyphen/screens/inbox_page.dart';
 import 'package:hyphen/managers/auth_manager.dart';
+import 'package:hyphen/screens/hot_items_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -158,22 +159,65 @@ class _HomePageState extends State<HomePage> {
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.black54,
-          selectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700),
-          unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w500),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-            BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Jual'),
-            BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: 'Inbox'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profil'),
-          ],
+        child: ListenableBuilder(
+          listenable: AuthManager(),
+          builder: (context, child) {
+            final auth = AuthManager();
+            final Widget profileIcon;
+            final Widget activeProfileIcon;
+
+            if (auth.isLoggedIn) {
+              final ImageProvider imgProvider = auth.photoUrl.isNotEmpty
+                  ? NetworkImage(auth.photoUrl)
+                  : const AssetImage('assets/images/user_avatar.png') as ImageProvider;
+
+              profileIcon = Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black38, width: 1),
+                  image: DecorationImage(
+                    image: imgProvider,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+              activeProfileIcon = Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black, width: 2),
+                  image: DecorationImage(
+                    image: imgProvider,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            } else {
+              profileIcon = const Icon(Icons.person_outline);
+              activeProfileIcon = const Icon(Icons.person);
+            }
+
+            return BottomNavigationBar(
+              currentIndex: _selectedIndex,
+              onTap: (index) => setState(() => _selectedIndex = index),
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black54,
+              selectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700),
+              unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w500),
+              items: [
+                const BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
+                const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+                const BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Jual'),
+                const BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: 'Inbox'),
+                BottomNavigationBarItem(icon: profileIcon, activeIcon: activeProfileIcon, label: 'Profil'),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -239,8 +283,8 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     'See all',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                       color: Colors.black54,
                     ),
                   ),
@@ -317,12 +361,19 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HotItemsPage(),
+                            ),
+                          );
+                        },
                         child: Text(
                           'See all',
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white70,
                           ),
                         ),
@@ -344,7 +395,9 @@ class _HomePageState extends State<HomePage> {
                       );
                     }
                     final products = manager.products.where((p) => p.isVerified).toList();
-                    final displayProducts = products.reversed.toList();
+                    // Sort by views count descending
+                    products.sort((a, b) => b.views.compareTo(a.views));
+                    final displayProducts = products;
                     if (displayProducts.isEmpty) {
                       return const SizedBox(
                         height: 520,
@@ -385,7 +438,10 @@ class _HomePageState extends State<HomePage> {
     final Color priceColor = onDark ? Colors.white : Colors.black;
 
     return GestureDetector(
-      onTap: () => CartHelper.showSizeSelector(context, product),
+      onTap: () {
+        ProductManager().fetchProductDetail(product.id);
+        CartHelper.showSizeSelector(context, product);
+      },
       child: SizedBox(
         width: 280,
         child: Column(
@@ -430,7 +486,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 4),
             Text(
-              '${product.size} · ${product.condition}',
+              '${product.size} · ${product.condition}${onDark ? ' · ${product.views} views' : ''}',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,

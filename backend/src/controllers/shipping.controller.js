@@ -74,7 +74,7 @@ const getMyShipments = async (req, res) => {
         const userId = req.user.id;
 
         const [shipments] = await pool.query(
-            'SELECT * FROM shipments WHERE userId = ? ORDER BY createdAt DESC',
+            'SELECT * FROM shipments WHERE buyerID = ? ORDER BY createdAt DESC',
             [userId]
         );
 

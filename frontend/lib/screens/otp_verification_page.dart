@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hyphen/managers/auth_manager.dart';
 import 'package:hyphen/screens/login_page.dart';
+import 'package:hyphen/helpers/notification_helper.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   final String email;
@@ -42,12 +43,10 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       });
 
       if (errorMessage == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Verifikasi berhasil! Silakan login untuk melanjutkan.'),
-            backgroundColor: Color(0xFF8C7355),
-            duration: Duration(seconds: 3),
-          ),
+        SnackBarHelper.show(
+          context,
+          'Verifikasi berhasil! Silakan login untuk melanjutkan.',
+          title: 'Verifikasi Berhasil',
         );
         
         // Navigate to Login page
@@ -56,12 +55,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           MaterialPageRoute(builder: (context) => const LoginPage()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 3),
-          ),
+        SnackBarHelper.show(
+          context,
+          errorMessage,
+          title: 'Verifikasi Gagal',
+          isError: true,
         );
       }
     }
@@ -81,20 +79,17 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     });
 
     if (errorMessage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kode OTP baru telah dikirim ke email Anda.'),
-          backgroundColor: Color(0xFF8C7355),
-          duration: Duration(seconds: 3),
-        ),
+      SnackBarHelper.show(
+        context,
+        'Kode OTP baru telah dikirim ke email Anda.',
+        title: 'OTP Terkirim',
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 3),
-        ),
+      SnackBarHelper.show(
+        context,
+        errorMessage,
+        title: 'Kirim Ulang Gagal',
+        isError: true,
       );
     }
   }

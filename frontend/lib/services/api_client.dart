@@ -41,17 +41,17 @@ class ApiClient {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
-        debugPrint('🌐 API Request: [${options.method}] ${options.path}');
+        debugPrint(' API Request: [${options.method}] ${options.path}');
         return handler.next(options);
       },
       onResponse: (response, handler) {
-        debugPrint('🌐 API Response: [${response.statusCode}] ${response.requestOptions.path}');
+        debugPrint(' API Response: [${response.statusCode}] ${response.requestOptions.path}');
         return handler.next(response);
       },
       onError: (DioException e, handler) async {
-        debugPrint('🌐 API Error: [${e.response?.statusCode}] ${e.requestOptions.path} - ${e.response?.data ?? e.message}');
+        debugPrint(' API Error: [${e.response?.statusCode}] ${e.requestOptions.path} - ${e.response?.data ?? e.message}');
         if (e.response?.statusCode == 401) {
-          debugPrint('🌐 Session expired (401). Triggering auto-logout.');
+          debugPrint(' Session expired (401). Triggering auto-logout.');
           AuthManager().logout();
         }
         return handler.next(e);

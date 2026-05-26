@@ -198,6 +198,9 @@ const getProductById = async (req, res) => {
     try {
         const { productId } = req.params;
 
+        // Increment views
+        await pool.query('UPDATE products SET views = views + 1 WHERE id = ?', [productId]);
+
         const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [productId]);
         if (product.length === 0) {
             return res.status(404).json({ message: 'Product tidak ditemukan' });

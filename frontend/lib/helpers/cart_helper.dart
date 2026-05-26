@@ -6,6 +6,7 @@ import 'package:hyphen/screens/cart_page.dart';
 import 'package:hyphen/managers/chat_manager.dart';
 import 'package:hyphen/managers/auth_manager.dart';
 import 'package:hyphen/screens/inbox_page.dart';
+import 'package:hyphen/helpers/notification_helper.dart';
 
 class CartHelper {
   static void showSizeSelector(BuildContext context, Product product) {
@@ -266,8 +267,10 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
 
                           final auth = AuthManager();
                           if (!auth.isLoggedIn) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Silakan login terlebih dahulu.')),
+                            SnackBarHelper.show(
+                              context,
+                              'Silakan login terlebih dahulu.',
+                              isError: true,
                             );
                             setState(() {
                               _isStartingChat = false;
@@ -276,8 +279,10 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
                           }
 
                           if (auth.userId == widget.product.sellerId) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Anda tidak bisa chat dengan diri sendiri.')),
+                            SnackBarHelper.show(
+                              context,
+                              'Anda tidak bisa chat dengan diri sendiri.',
+                              isError: true,
                             );
                             setState(() {
                               _isStartingChat = false;
@@ -313,8 +318,10 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
                               ),
                             );
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Gagal memulai chat.')),
+                            SnackBarHelper.show(
+                              context,
+                              'Gagal memulai chat.',
+                              isError: true,
                             );
                           }
                         },
@@ -345,34 +352,30 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
 
                           if (error != null) {
                             Navigator.pop(context); // Close bottom sheet
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(error)),
+                            SnackBarHelper.show(
+                              context,
+                              error,
+                              title: 'Gagal Menambahkan',
+                              isError: true,
                             );
                             return;
                           }
 
                           Navigator.pop(context); // Close bottom sheet
 
-                          // Show snackbar confirmation
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              behavior: SnackBarBehavior.floating,
-                              content: Text('${widget.product.title} ($_selectedSize) dimasukkan ke keranjang.'),
-                              duration: const Duration(seconds: 3),
-                              action: SnackBarAction(
-                                label: 'Lihat Keranjang',
-                                textColor: Colors.amber.shade400,
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).clearSnackBars();
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const CartPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                          SnackBarHelper.show(
+                            context,
+                            '${widget.product.title} ($_selectedSize)',
+                            title: 'Berhasil Ditambahkan',
+                            actionLabel: 'Lihat',
+                            onActionPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const CartPage(),
+                                ),
+                              );
+                            },
                           );
                         },
                   style: ElevatedButton.styleFrom(

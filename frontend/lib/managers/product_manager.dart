@@ -166,4 +166,19 @@ class ProductManager extends ChangeNotifier {
     _lastFetchMyProductsTime = null;
     notifyListeners();
   }
+
+  Future<Product?> fetchProductDetail(String productId) async {
+    try {
+      final response = await ApiClient().dio.get('/product/products/$productId');
+      if (response.statusCode == 200) {
+        final productJson = response.data['data'];
+        final updatedProduct = Product.fromJson(productJson);
+        updateProduct(updatedProduct);
+        return updatedProduct;
+      }
+    } catch (e) {
+      print('Error fetching product detail: $e');
+    }
+    return null;
+  }
 }

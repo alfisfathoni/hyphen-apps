@@ -32,6 +32,7 @@ const formatProduct = (product, sizes = []) => ({
     defects: product.defects || null,
     status: product.status,
     rejectedReason: product.rejectedReason || null,
+    views: product.views || 0,
     sizes,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,

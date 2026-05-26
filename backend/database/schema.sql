@@ -103,6 +103,7 @@ CREATE TABLE
         item_condition ENUM ('like_new', 'good', 'fair') NOT NULL,
         defects TEXT NULL,
         rejectedReason TEXT NULL,
+        views INT NOT NULL DEFAULT 0,
         createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (sellerID) REFERENCES users (id) ON DELETE CASCADE,

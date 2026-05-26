@@ -5,6 +5,8 @@ import 'package:hyphen/managers/checkout_manager.dart';
 import 'package:hyphen/models/city.dart';
 import 'package:hyphen/widgets/city_autocomplete_field.dart';
 import 'package:hyphen/screens/payment_page.dart';
+import 'package:hyphen/managers/address_manager.dart';
+import 'package:hyphen/helpers/notification_helper.dart';
 
 // Address model
 class AddressInfo {
@@ -67,9 +69,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   // Mock list of courier options (RajaOngkir preparation)
   final List<CourierOption> _courierOptions = [
-    CourierOption(courierName: 'JNE Express', serviceName: 'JNE Oke', price: 12000.0, etd: '3-4'),
-    CourierOption(courierName: 'JNE Express', serviceName: 'JNE Reguler', price: 18000.0, etd: '2-3'),
-    CourierOption(courierName: 'JNE Express', serviceName: 'JNE YES', price: 28000.0, etd: '1'),
+    CourierOption(courierName: 'JNE', serviceName: 'OKE', price: 12000.0, etd: '3-4'),
+    CourierOption(courierName: 'JNE', serviceName: 'REG', price: 18000.0, etd: '2-3'),
+    CourierOption(courierName: 'JNE', serviceName: 'YES', price: 28000.0, etd: '1'),
   ];
 
   // Calculate pricing summary
@@ -107,9 +109,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // Default payment method is QRIS
     _selectedPayment = PaymentOption(name: 'QRIS', type: 'QRIS');
 
-    // Clear SnackBar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Clear SnackBar & auto-load default address
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ScaffoldMessenger.of(context).clearSnackBars();
+      
+      try {
+        await AddressManager().fetchAddresses();
+        final defAddress = AddressManager().defaultAddress;
+        if (defAddress != null && mounted) {
+          setState(() {
+            _address = AddressInfo(
+              id: defAddress.id,
+              name: defAddress.recipientName,
+              phone: defAddress.phone,
+              fullAddress: defAddress.fullAddress,
+              cityId: defAddress.destinationCityId,
+              cityLabel: defAddress.destinationCityLabel,
+            );
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading default address: $e');
+      }
     });
   }
 
@@ -880,8 +901,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     Navigator.pop(context); // Close loading dialog
 
     if (!result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? 'Checkout gagal')),
+      SnackBarHelper.show(
+        context,
+        result.message ?? 'Checkout gagal',
+        title: 'Checkout Gagal',
+        isError: true,
       );
       return;
     }
@@ -1181,25 +1205,67 @@ class _CheckoutPengisianPageState extends State<CheckoutPengisianPage> {
     );
   }
 
-  void _saveAndReturn() {
+  void _saveAndReturn() async {
     if (_nameController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty ||
         _addressController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Harap lengkapi semua input data pengisian.'),
-        ),
+      SnackBarHelper.show(
+        context,
+        'Harap lengkapi semua input data pengisian.',
+        title: 'Formulir Belum Lengkap',
+        isError: true,
       );
       return;
     }
 
-    final address = AddressInfo(
-      name: _nameController.text.trim(),
+    const Color brandBrown = Color(0xFF8C7355);
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: brandBrown),
+      ),
+    );
+
+    final error = await AddressManager().addAddress(
+      label: 'Utama',
+      recipientName: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
-      fullAddress: _addressController.text.trim(),
-      cityId: _selectedCity?.id.toString(),
-      cityLabel: _selectedCity?.label,
+      address: _addressController.text.trim(),
+      postalCode: '11480',
+      destinationCityId: _selectedCity?.id.toString() ?? '1',
+      destinationCityLabel: _selectedCity?.label ?? 'Jakarta',
+      isDefault: true,
+    );
+
+    if (!mounted) return;
+    Navigator.pop(context); // Close loading dialog
+
+    if (error != null) {
+      SnackBarHelper.show(
+        context,
+        'Gagal menyimpan alamat: $error',
+        title: 'Penyimpanan Gagal',
+        isError: true,
+      );
+      return;
+    }
+
+    // Find the newly added address in the list
+    final newAddress = AddressManager().addresses.firstWhere(
+      (a) => a.recipientName == _nameController.text.trim() && a.fullAddress == _addressController.text.trim(),
+      orElse: () => AddressManager().addresses.first,
+    );
+
+    final address = AddressInfo(
+      id: newAddress.id,
+      name: newAddress.recipientName,
+      phone: newAddress.phone,
+      fullAddress: newAddress.fullAddress,
+      cityId: newAddress.destinationCityId,
+      cityLabel: newAddress.destinationCityLabel,
     );
 
     Navigator.pop(context, address);

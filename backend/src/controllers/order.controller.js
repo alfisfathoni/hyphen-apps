@@ -34,6 +34,18 @@ const createOrder = async (req, res) => {
 
         const size = sizeRow[0].size;
 
+        // Check for accepted price negotiation
+        const [negotiationRows] = await pool.query(
+            "SELECT proposedPrice FROM chat_rooms WHERE buyerId = ? AND sellerId = ? AND productId = ? AND negotiationStatus = 'accepted'",
+            [buyerID, product[0].sellerID, productId]
+        );
+
+        let finalPrice = Number(product[0].price);
+        if (negotiationRows.length > 0 && negotiationRows[0].proposedPrice) {
+            finalPrice = Number(negotiationRows[0].proposedPrice);
+            console.log(` Applied negotiated price of Rp ${finalPrice} for product ${productId}`);
+        }
+
         await pool.query(
             'UPDATE product_sizes SET stock = 0 WHERE productId = ? AND size = ?',
             [productId, size]
@@ -42,7 +54,7 @@ const createOrder = async (req, res) => {
         const orderId = uuidv4();
         await pool.query(
             'INSERT INTO orders (id, buyerID, productId, size, price, status) VALUES (?, ?, ?, ?, ?, "pending")',
-            [orderId, buyerID, productId, size, product[0].price]
+            [orderId, buyerID, productId, size, finalPrice]
         );
 
         return res.status(201).json({
@@ -52,7 +64,7 @@ const createOrder = async (req, res) => {
                 productId,
                 productName: product[0].name,
                 size,
-                price: product[0].price
+                price: finalPrice
             }
         });
     } catch (error) {

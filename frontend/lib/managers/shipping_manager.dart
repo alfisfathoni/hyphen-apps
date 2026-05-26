@@ -53,7 +53,7 @@ class ShippingManager extends ChangeNotifier {
     if (!force && _shippingCache.containsKey(cacheKey) && _shippingCacheTime.containsKey(cacheKey)) {
       final cacheTime = _shippingCacheTime[cacheKey]!;
       if (DateTime.now().difference(cacheTime) < const Duration(seconds: 30)) {
-        debugPrint('🚚 Using cached shipping costs for key: $cacheKey');
+        debugPrint(' Using cached shipping costs for key: $cacheKey');
         return _shippingCache[cacheKey]!;
       }
     }

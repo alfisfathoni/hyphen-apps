@@ -270,6 +270,52 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
                   ),
+                  const SizedBox(height: 32),
+
+                  // Divider with 'Or continue with'
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          'Or continue with',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white30,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Colors.white.withOpacity(0.1))),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Social Mocks (Google & Apple)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSocialButton(
+                          icon: Icons.g_mobiledata_rounded,
+                          label: 'Google',
+                          onTap: _showGoogleMockLoginDialog,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSocialButton(
+                          icon: Icons.apple_rounded,
+                          label: 'Apple',
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Apple Sign Up is mocked')),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 40),
 
                   // Footer: Login navigation
@@ -344,6 +390,188 @@ class _RegisterPageState extends State<RegisterPage> {
               onPressed: onToggleObscure,
             )
           : null,
+    );
+  }
+
+  void _showGoogleMockLoginDialog() {
+    final emailController = TextEditingController(text: 'google_tester@gmail.com');
+    final dialogFormKey = GlobalKey<FormState>();
+    bool isDialogLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isDialogLoading,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[950],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: Colors.white.withOpacity(0.1)),
+              ),
+              title: Text(
+                'Google Sign Up (Mock)',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              content: Form(
+                key: dialogFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Enter your Google email to simulate OAuth registration or login:',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: GoogleFonts.plusJakartaSans(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'name@example.com',
+                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.white30, fontSize: 14),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.05),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF8C7355), width: 1.5),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Email is required';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                          return 'Enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDialogLoading ? null : () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.plusJakartaSans(color: Colors.white60),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isDialogLoading
+                      ? null
+                      : () async {
+                          if (dialogFormKey.currentState!.validate()) {
+                            setDialogState(() {
+                              isDialogLoading = true;
+                            });
+
+                            final email = emailController.text.trim();
+                            final success = await AuthManager().loginWithGoogle(email);
+
+                            if (!mounted) return;
+
+                            setDialogState(() {
+                              isDialogLoading = false;
+                            });
+
+                            Navigator.pop(context); // Close dialog
+
+                            if (success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Selamat datang, ${AuthManager().userName}!'),
+                                  backgroundColor: const Color(0xFF8C7355),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                              Navigator.pop(context); // Go back to screen below register/login
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Google Sign In failed.'),
+                                  backgroundColor: Colors.redAccent,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8C7355),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isDialogLoading
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          'Submit',
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSocialButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withOpacity(0.02),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

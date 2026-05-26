@@ -9,6 +9,7 @@ class Product {
   final String condition;
   final String category; 
   final bool isVerified;
+  final int views;
 
   const Product({
     required this.id,
@@ -21,6 +22,7 @@ class Product {
     required this.category,
     this.isVerified = true,
     this.sellerId = '',
+    this.views = 0,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class Product {
       condition: _mapCondition(json['item_condition']),
       category: json['productCategory'] ?? 'Daily',
       isVerified: json['status'] == 'approved',
+      views: json['views'] is int ? json['views'] : (int.tryParse(json['views']?.toString() ?? '') ?? 0),
     );
   }
 
@@ -78,6 +81,7 @@ class Product {
     String? category,
     bool? isVerified,
     String? sellerId,
+    int? views,
   }) {
     return Product(
       id: id ?? this.id,
@@ -90,6 +94,7 @@ class Product {
       category: category ?? this.category,
       isVerified: isVerified ?? this.isVerified,
       sellerId: sellerId ?? this.sellerId,
+      views: views ?? this.views,
     );
   }
 

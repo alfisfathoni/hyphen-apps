@@ -755,6 +755,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               ),
             ),
 
+          // Negotiation Bar
+          ListenableBuilder(
+            listenable: ChatManager(),
+            builder: (context, child) {
+              return _buildNegotiationBar(context, ChatManager().activeRoom, brandBrown);
+            },
+          ),
+
           // Message List
           Expanded(
             child: ListenableBuilder(
@@ -872,6 +880,32 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _buildMessageBubble(String text, bool isMe, String time) {
+    if (text.contains('mengajukan penawaran harga baru:') ||
+        text.contains('menyetujui penawaran harga:') ||
+        text.contains('menolak penawaran harga:')) {
+      return Align(
+        alignment: Alignment.center,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0EAE1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE5DAC9)),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              color: const Color(0xFF7A654D),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
+
     const Color brandBrown = Color(0xFF8C7355);
 
     return Align(
@@ -922,6 +956,306 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ),
           ),
           const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNegotiationBar(BuildContext context, Map<String, dynamic>? chatRoom, Color brandBrown) {
+    if (chatRoom == null) return const SizedBox.shrink();
+
+    final currentUserId = AuthManager().userId;
+    final isBuyer = currentUserId == chatRoom['buyerId']?.toString() || currentUserId == chatRoom['buyerId'];
+    final isSeller = currentUserId == chatRoom['sellerId']?.toString() || currentUserId == chatRoom['sellerId'];
+    final status = chatRoom['negotiationStatus'];
+    final proposedBy = chatRoom['proposedBy'];
+    
+    double? price;
+    if (chatRoom['proposedPrice'] != null) {
+      price = double.tryParse(chatRoom['proposedPrice'].toString());
+    }
+
+    if (status == null) {
+      if (isBuyer) {
+        return _buildNegotiationCard(
+          context: context,
+          text: 'Nego harga untuk produk ini?',
+          actionWidgets: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: brandBrown,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => _showProposePriceDialog(context),
+              child: const Text('Tawar Harga', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
+    if (status == 'accepted') {
+      return _buildNegotiationCard(
+        context: context,
+        text: ' Penawaran disetujui: ${_formatRupiah(price!)}',
+        subText: isBuyer ? 'Harga ini akan otomatis diterapkan saat Anda checkout!' : 'Pembeli akan checkout dengan harga ini.',
+        actionWidgets: const [],
+        color: Colors.green.shade50,
+        textColor: Colors.green.shade800,
+      );
+    }
+
+    if (status == 'rejected') {
+      if (isSeller) {
+        final title = proposedBy == 'buyer'
+            ? ' Anda menolak penawaran pembeli'
+            : ' Penawaran Anda ditolak oleh pembeli';
+        return _buildNegotiationCard(
+          context: context,
+          text: title,
+          subText: 'Silakan ubah harga penawaran untuk melanjutkan.',
+          color: Colors.red.shade50,
+          textColor: Colors.red.shade800,
+          actionWidgets: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: brandBrown,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => _showProposePriceDialog(context),
+              child: const Text('Ubah Harga', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      }
+      final title = proposedBy == 'buyer'
+          ? ' Penawaran Anda ditolak oleh penjual'
+          : ' Anda menolak penawaran penjual';
+      return _buildNegotiationCard(
+        context: context,
+        text: title,
+        subText: 'Menunggu penjual mengubah harga...',
+        color: Colors.red.shade50,
+        textColor: Colors.red.shade800,
+        actionWidgets: const [],
+      );
+    }
+
+    if (status == 'pending') {
+      if (proposedBy == 'buyer') {
+        if (isBuyer) {
+          return _buildNegotiationCard(
+            context: context,
+            text: ' Menunggu respon penjual',
+            subText: 'Tawaran Anda: ${_formatRupiah(price!)}',
+            color: Colors.amber.shade50,
+            textColor: Colors.amber.shade800,
+            actionWidgets: const [],
+          );
+        }
+        return _buildNegotiationCard(
+          context: context,
+          text: ' Tawaran baru dari pembeli: ${_formatRupiah(price!)}',
+          color: Colors.amber.shade50,
+          textColor: Colors.amber.shade800,
+          actionWidgets: [
+            TextButton(
+              onPressed: () => ChatManager().respondNegotiation(widget.roomId, 'reject'),
+              child: const Text('Tolak', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent.shade100,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => _showProposePriceDialog(context),
+              child: const Text('Ubah / Counter', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => ChatManager().respondNegotiation(widget.roomId, 'accept'),
+              child: const Text('Setuju', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      } else if (proposedBy == 'seller') {
+        if (isSeller) {
+          return _buildNegotiationCard(
+            context: context,
+            text: ' Menunggu respon pembeli',
+            subText: 'Tawaran Anda: ${_formatRupiah(price!)}',
+            color: Colors.amber.shade50,
+            textColor: Colors.amber.shade800,
+            actionWidgets: const [],
+          );
+        }
+        return _buildNegotiationCard(
+          context: context,
+          text: ' Penawaran baru dari penjual: ${_formatRupiah(price!)}',
+          color: Colors.amber.shade50,
+          textColor: Colors.amber.shade800,
+          actionWidgets: [
+            TextButton(
+              onPressed: () => ChatManager().respondNegotiation(widget.roomId, 'reject'),
+              child: const Text('Tolak', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => ChatManager().respondNegotiation(widget.roomId, 'accept'),
+              child: const Text('Setuju', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      }
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildNegotiationCard({
+    required BuildContext context,
+    required String text,
+    String? subText,
+    required List<Widget> actionWidgets,
+    Color? color,
+    Color? textColor,
+  }) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color ?? Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+        border: Border.all(color: color != null ? color.withOpacity(0.5) : const Color(0xFFEAEAEA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      text,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: textColor ?? Colors.black87,
+                      ),
+                    ),
+                    if (subText != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subText,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          color: textColor?.withOpacity(0.7) ?? Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (actionWidgets.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: actionWidgets,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showProposePriceDialog(BuildContext context) {
+    final chatRoom = ChatManager().activeRoom;
+    double? existingPrice;
+    if (chatRoom != null && chatRoom['proposedPrice'] != null) {
+      existingPrice = double.tryParse(chatRoom['proposedPrice'].toString());
+    }
+    final initialValue = existingPrice ?? widget.productPrice;
+    final controller = TextEditingController(
+      text: initialValue != null ? initialValue.toInt().toString() : '',
+    );
+    if (controller.text.isNotEmpty) {
+      controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: controller.text.length,
+      );
+    }
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Text(
+          'Tawar Harga (Rp)',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          style: GoogleFonts.plusJakartaSans(color: Colors.black),
+          decoration: const InputDecoration(
+            hintText: 'cth. 200000',
+            hintStyle: TextStyle(color: Colors.black38),
+            prefixText: 'Rp ',
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.black26),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.black),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.plusJakartaSans(color: Colors.black54),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+            onPressed: () {
+              final parsed = double.tryParse(controller.text);
+              if (parsed != null && parsed > 0) {
+                ChatManager().proposePrice(widget.roomId, parsed);
+              }
+              Navigator.pop(context);
+            },
+            child: Text(
+              'Kirim',
+              style: GoogleFonts.plusJakartaSans(color: Colors.white),
+            ),
+          ),
         ],
       ),
     );

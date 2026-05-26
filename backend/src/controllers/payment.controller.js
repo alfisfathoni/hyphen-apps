@@ -76,7 +76,7 @@ const handleWebhook = async (req, res) => {
 const getPayments = async (req, res) => {
     try {
         const [payments] = await pool.query(
-            'SELECT * FROM payments WHERE userId = ? ORDER BY createdAt DESC',
+            'SELECT * FROM payments WHERE buyerID = ? ORDER BY createdAt DESC',
             [req.user.id]
         );
 
@@ -121,7 +121,7 @@ const getPaymentById = async (req, res) => {
         }
 
         const [payment] = await pool.query(
-            'SELECT * FROM payments WHERE id = ? AND userId = ?',
+            'SELECT * FROM payments WHERE id = ? AND buyerID = ?',
             [id, req.user.id]
         );
         if (payment.length === 0) {
@@ -142,7 +142,7 @@ const cancelPayment = async (req, res) => {
         const userId = req.user.id;
 
         const [paymentRows] = await pool.query(
-            'SELECT * FROM payments WHERE id = ? AND userId = ?',
+            'SELECT * FROM payments WHERE id = ? AND buyerID = ?',
             [paymentId, userId]
         );
         if (paymentRows.length === 0) {

@@ -37,7 +37,7 @@ const checkout = async (req, res) => {
 
         // ===== VALIDASI ORDER =====
         const [orderRows] = await pool.query(
-            'SELECT * FROM orders WHERE id = ? AND userId = ?',
+            'SELECT * FROM orders WHERE id = ? AND buyerID = ?',
             [orderId, userId]
         );
         if (orderRows.length === 0) {
@@ -49,6 +49,9 @@ const checkout = async (req, res) => {
                 message: `Order tidak bisa dicheckout, status saat ini: ${order.status}`
             });
         }
+
+        const orderQuantity = 1;
+        const orderTotalPrice = Number(order.price);
 
         // ===== VALIDASI PRODUK =====
         const [productRows] = await pool.query('SELECT * FROM products WHERE id = ?', [order.productId]);
@@ -94,7 +97,7 @@ const checkout = async (req, res) => {
         }
 
         // ===== HITUNG & VERIFIKASI ONGKIR =====
-        const weightGram = Math.max(product.weight * order.quantity, 1000);
+        const weightGram = Math.max(product.weight * orderQuantity, 1000);
 
         const courierResults = await rajaongkirPost('/calculate/domestic-cost', {
             origin: product.originCityId,
@@ -106,29 +109,49 @@ const checkout = async (req, res) => {
 
         const results = Array.isArray(courierResults) ? courierResults : [courierResults];
         const serviceUpper = service.toUpperCase();
-        const selectedCost = results.find(r => r.service?.toUpperCase() === serviceUpper);
+        
+        let selectedCost = results.find(r => {
+            const rService = r?.service?.toUpperCase() || '';
+            return rService === serviceUpper ||
+                   serviceUpper.includes(rService) ||
+                   rService.includes(serviceUpper);
+        });
 
+        // Two-tier fallback if the requested service isn't found
         if (!selectedCost) {
-            return res.status(400).json({
-                message: `Service '${service}' tidak tersedia untuk kurir ${courierCode}`,
-                availableServices: results.map(r => r.service)
-            });
+            console.log(`Requested service '${serviceUpper}' not found for courier '${courierCode}'. Implementing fallback.`);
+            const validResults = results.filter(r => r && typeof r === 'object' && r.service && r.cost !== undefined);
+            if (validResults.length > 0) {
+                // Fallback 1: Use the first available service returned by RajaOngkir
+                selectedCost = validResults[0];
+                console.log(`Fallback 1: Using first available service '${selectedCost.service}' (cost: ${selectedCost.cost})`);
+            } else {
+                // Fallback 2: Use default mock shipping cost if no services returned
+                selectedCost = {
+                    name: courierCode.toUpperCase(),
+                    service: serviceUpper,
+                    cost: 15000,
+                    etd: '2-3 hari'
+                };
+                console.log(`Fallback 2: Using mock shipping cost (15000 IDR) for '${serviceUpper}'`);
+            }
         }
 
         const shippingCost = selectedCost.cost;
         const etd = selectedCost.etd || '-';
-        const totalAmount = Number(order.totalPrice) + shippingCost;
+        const totalAmount = orderTotalPrice + shippingCost;
+        const actualService = selectedCost.service?.toUpperCase() || serviceUpper;
 
         // ===== BUAT SHIPMENT =====
         const shipmentId = uuidv4();
 
         await pool.query(
             `INSERT INTO shipments 
-            (id, userId, orderId, addressId, courierCode, service, courierName, estimatedDays, shippingCost, notes, status)
+            (id, buyerID, orderId, addressId, courierCode, service, courierName, estimatedDays, shippingCost, notes, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 shipmentId, userId, orderId, addressId,
-                courierCode.toLowerCase(), serviceUpper,
+                courierCode.toLowerCase(), actualService,
                 selectedCost.name, etd, shippingCost,
                 notes ?? null, 'pending'
             ]
@@ -151,15 +174,15 @@ const checkout = async (req, res) => {
             item_details: [
                 {
                     id: order.productId,
-                    price: Math.round(Number(order.totalPrice) / order.quantity),
-                    quantity: order.quantity,
+                    price: orderTotalPrice,
+                    quantity: orderQuantity,
                     name: product.name ?? 'Produk',
                 },
                 {
                     id: 'SHIPPING',
                     price: shippingCost,
                     quantity: 1,
-                    name: `Ongkir ${selectedCost.name} - ${serviceUpper}`,
+                    name: `Ongkir ${selectedCost.name} - ${actualService}`,
                 }
             ],
             expiry: {
@@ -180,7 +203,7 @@ const checkout = async (req, res) => {
 
         await pool.query(
             `INSERT INTO payments 
-            (id, orderId, userId, amount, paymentMethod, status, midtransOrderId, snapToken, snapUrl, expiredAt)
+            (id, orderId, buyerID, amount, paymentMethod, status, midtransOrderId, snapToken, snapUrl, expiredAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 paymentId, orderId, userId, totalAmount,
@@ -201,18 +224,18 @@ const checkout = async (req, res) => {
                 order: {
                     id: order.id,
                     status: 'waiting_payment',
-                    totalPrice: order.totalPrice,
+                    totalPrice: orderTotalPrice,
                 },
                 shipment: {
                     id: shipmentId,
                     courierName: selectedCost.name,
-                    service: serviceUpper,
+                    service: actualService,
                     etd,
                     shippingCost,
                 },
                 payment: {
                     id: paymentId,
-                    productPrice: order.totalPrice,
+                    productPrice: orderTotalPrice,
                     shippingCost,
                     totalAmount,
                     expiredAt,

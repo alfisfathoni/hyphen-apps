@@ -29,7 +29,7 @@ class ChatManager extends ChangeNotifier {
     if (socket != null && socket!.connected) return;
 
     final socketUrl = ApiClient.baseUrl.replaceAll('/api/v1', '');
-    print('⚡ Connecting to socket at: $socketUrl');
+    print(' Connecting to socket at: $socketUrl');
 
     socket = IO.io(
       socketUrl,
@@ -42,7 +42,7 @@ class ChatManager extends ChangeNotifier {
     socket!.connect();
 
     socket!.onConnect((_) {
-      print('⚡ Socket connected successfully: ${socket!.id}');
+      print(' Socket connected successfully: ${socket!.id}');
       // If we are currently in a room, re-join it
       if (activeRoomId != null) {
         joinRoom(activeRoomId!);
@@ -50,23 +50,29 @@ class ChatManager extends ChangeNotifier {
     });
 
     socket!.onDisconnect((_) {
-      print('⚡ Socket disconnected');
+      print(' Socket disconnected');
     });
 
     socket!.onConnectError((err) {
-      print('⚡ Socket connect error: $err');
+      print(' Socket connect error: $err');
     });
 
     // Listen to new messages
     socket!.on('new_message', (data) {
-      print('⚡ Socket new_message: $data');
+      print(' Socket new_message: $data');
       _onNewMessageReceived(data);
     });
 
     // Listen to messages read confirmations
     socket!.on('messages_read', (data) {
-      print('⚡ Socket messages_read: $data');
+      print(' Socket messages_read: $data');
       _onMessagesRead(data);
+    });
+
+    // Listen to price negotiations
+    socket!.on('negotiation_update', (data) {
+      print(' Socket negotiation_update: $data');
+      _onNegotiationUpdated(data);
     });
   }
 
@@ -74,7 +80,7 @@ class ChatManager extends ChangeNotifier {
     activeRoomId = roomId;
     if (socket != null && socket!.connected) {
       socket!.emit('join_room', roomId);
-      print('⚡ Emitted join_room for: $roomId');
+      print(' Emitted join_room for: $roomId');
     }
   }
 
@@ -146,7 +152,7 @@ class ChatManager extends ChangeNotifier {
 
     if (socket != null && socket!.connected) {
       socket!.emit('send_message', payload);
-      print('⚡ Emitted send_message: $payload');
+      print(' Emitted send_message: $payload');
     } else {
       // REST fallback
       try {
@@ -230,11 +236,71 @@ class ChatManager extends ChangeNotifier {
     }
   }
 
+  Map<String, dynamic>? get activeRoom {
+    if (activeRoomId == null) return null;
+    try {
+      return _rooms.firstWhere((r) => r['id'] == activeRoomId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _onNegotiationUpdated(dynamic data) {
+    final roomId = data['roomId'];
+    final index = _rooms.indexWhere((r) => r['id'] == roomId);
+    if (index >= 0) {
+      _rooms[index]['proposedPrice'] = data['proposedPrice'];
+      _rooms[index]['negotiationStatus'] = data['negotiationStatus'];
+      _rooms[index]['proposedBy'] = data['proposedBy'];
+      notifyListeners();
+    } else {
+      fetchRooms(); // fetch rooms to get the updated details
+    }
+  }
+
+  Future<bool> proposePrice(String roomId, double price) async {
+    try {
+      final response = await ApiClient().dio.post('/chat/negotiate/propose', data: {
+        'roomId': roomId,
+        'price': price,
+      });
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        _onNegotiationUpdated(data);
+        return true;
+      }
+    } on DioException catch (e) {
+      print('Error proposing price: ${e.response?.data}');
+    } catch (e) {
+      print('Error proposing price: $e');
+    }
+    return false;
+  }
+
+  Future<bool> respondNegotiation(String roomId, String action) async {
+    try {
+      final response = await ApiClient().dio.post('/chat/negotiate/respond', data: {
+        'roomId': roomId,
+        'action': action,
+      });
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        _onNegotiationUpdated(data);
+        return true;
+      }
+    } on DioException catch (e) {
+      print('Error responding to negotiation: ${e.response?.data}');
+    } catch (e) {
+      print('Error responding to negotiation: $e');
+    }
+    return false;
+  }
+
   void disconnectSocket() {
     if (socket != null) {
       socket!.disconnect();
       socket = null;
-      print('⚡ Socket manually disconnected');
+      print(' Socket manually disconnected');
     }
     _rooms.clear();
     _messages.clear();

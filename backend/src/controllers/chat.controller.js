@@ -26,7 +26,7 @@ const getRoomWithDetails = async (roomId, currentUserId) => {
          LEFT JOIN user_profiles up ON up.userId = u.id
          LEFT JOIN products p ON p.id = cr.productId
          WHERE cr.id = ?`,
-        [currentUserId, currentUserId, currentUserId, roomId]
+        [currentUserId, currentUserId, roomId]
     );
     return rooms[0];
 };
@@ -107,7 +107,7 @@ const getMyRooms = async (req, res) => {
              LEFT JOIN products p ON p.id = cr.productId
              WHERE cr.buyerId = ? OR cr.sellerId = ?
              ORDER BY lastMessageAt DESC`,
-            [userId, userId, userId, userId, userId]
+            [userId, userId, userId, userId]
         );
 
         return res.status(200).json({
@@ -248,4 +248,175 @@ const uploadChatImage = async (req, res) => {
     }
 };
 
-module.exports = { getOrCreateRoom, getMyRooms, getMessages, sendMessage, uploadChatImage };
+const proposePrice = async (req, res) => {
+    try {
+        const { roomId, price } = req.body;
+        const userId = req.user.id;
+
+        if (!roomId || !price || isNaN(price) || Number(price) <= 0) {
+            return res.status(400).json({ message: 'roomId dan price yang valid wajib diisi' });
+        }
+
+        // Validasi user adalah member room
+        const [room] = await db.query(
+            'SELECT * FROM chat_rooms WHERE id = ? AND (buyerId = ? OR sellerId = ?)',
+            [roomId, userId, userId]
+        );
+
+        if (room.length === 0) {
+            return res.status(403).json({ message: 'Akses tidak diizinkan' });
+        }
+
+        const activeRoom = room[0];
+        const proposedBy = userId === activeRoom.buyerId ? 'buyer' : 'seller';
+
+        // Update room negotiation
+        await db.query(
+            "UPDATE chat_rooms SET proposedPrice = ?, negotiationStatus = 'pending', proposedBy = ? WHERE id = ?",
+            [Number(price), proposedBy, roomId]
+        );
+
+        // Insert system message into chat
+        const messageId = uuidv4();
+        const senderName = proposedBy === 'buyer' ? 'Pembeli' : 'Penjual';
+        const formattedText = `${senderName} mengajukan penawaran harga baru: Rp ${Number(price).toLocaleString('id-ID')}`;
+
+        await db.query(
+            'INSERT INTO chat_messages (id, roomId, senderId, message, type) VALUES (?, ?, ?, ?, ?)',
+            [messageId, roomId, userId, formattedText, 'text']
+        );
+
+        const newMessage = {
+            id: messageId,
+            roomId,
+            senderId: userId,
+            senderName: req.user.username,
+            message: formattedText,
+            type: 'text',
+            isRead: false,
+            createdAt: new Date().toISOString()
+        };
+
+        // Broadcast via Socket.IO
+        const io = getIo();
+        io.to(roomId).emit('new_message', newMessage);
+        io.to(roomId).emit('negotiation_update', {
+            roomId,
+            proposedPrice: Number(price),
+            negotiationStatus: 'pending',
+            proposedBy
+        });
+
+        return res.status(200).json({
+            message: 'Penawaran harga berhasil diajukan',
+            data: {
+                roomId,
+                proposedPrice: Number(price),
+                negotiationStatus: 'pending',
+                proposedBy
+            }
+        });
+    } catch (error) {
+        console.error('proposePrice error:', error);
+        return res.status(500).json({ message: 'Gagal mengajukan penawaran harga', error: error.message });
+    }
+};
+
+const respondNegotiation = async (req, res) => {
+    try {
+        const { roomId, action } = req.body; // action: 'accept' or 'reject'
+        const userId = req.user.id;
+
+        if (!roomId || !action || !['accept', 'reject'].includes(action)) {
+            return res.status(400).json({ message: 'roomId dan action (accept/reject) wajib diisi' });
+        }
+
+        // Validasi user adalah member room
+        const [room] = await db.query(
+            'SELECT * FROM chat_rooms WHERE id = ? AND (buyerId = ? OR sellerId = ?)',
+            [roomId, userId, userId]
+        );
+
+        if (room.length === 0) {
+            return res.status(403).json({ message: 'Akses tidak diizinkan' });
+        }
+
+        const activeRoom = room[0];
+        if (activeRoom.negotiationStatus !== 'pending') {
+            return res.status(400).json({ message: 'Tidak ada penawaran aktif untuk direspon' });
+        }
+
+        // Ensure responder is NOT the one who proposed it (so they are responding to the other side's proposal)
+        const isProposer = (userId === activeRoom.buyerId && activeRoom.proposedBy === 'buyer') ||
+                           (userId === activeRoom.sellerId && activeRoom.proposedBy === 'seller');
+        
+        // Exception: Seller is allowed to counter/reject if buyer disagrees, or either side can reject.
+        // Let's allow either side to reject, but only the other side can accept.
+        if (action === 'accept' && isProposer) {
+            return res.status(400).json({ message: 'Anda tidak dapat menyetujui penawaran Anda sendiri' });
+        }
+
+        const status = action === 'accept' ? 'accepted' : 'rejected';
+
+        // Update room negotiation
+        await db.query(
+            "UPDATE chat_rooms SET negotiationStatus = ? WHERE id = ?",
+            [status, roomId]
+        );
+
+        // Insert system message
+        const messageId = uuidv4();
+        const responderName = userId === activeRoom.buyerId ? 'Pembeli' : 'Penjual';
+        const actionText = action === 'accept' ? 'menyetujui' : 'menolak';
+        const formattedText = `${responderName} ${actionText} penawaran harga: Rp ${Number(activeRoom.proposedPrice).toLocaleString('id-ID')}`;
+
+        await db.query(
+            'INSERT INTO chat_messages (id, roomId, senderId, message, type) VALUES (?, ?, ?, ?, ?)',
+            [messageId, roomId, userId, formattedText, 'text']
+        );
+
+        const newMessage = {
+            id: messageId,
+            roomId,
+            senderId: userId,
+            senderName: req.user.username,
+            message: formattedText,
+            type: 'text',
+            isRead: false,
+            createdAt: new Date().toISOString()
+        };
+
+        // Broadcast via Socket.IO
+        const io = getIo();
+        io.to(roomId).emit('new_message', newMessage);
+        io.to(roomId).emit('negotiation_update', {
+            roomId,
+            proposedPrice: activeRoom.proposedPrice,
+            negotiationStatus: status,
+            proposedBy: activeRoom.proposedBy
+        });
+
+        return res.status(200).json({
+            message: `Penawaran harga berhasil di-${actionText}`,
+            data: {
+                roomId,
+                proposedPrice: activeRoom.proposedPrice,
+                negotiationStatus: status,
+                proposedBy: activeRoom.proposedBy
+            }
+        });
+    } catch (error) {
+        console.error('respondNegotiation error:', error);
+        return res.status(500).json({ message: 'Gagal merespon penawaran harga', error: error.message });
+    }
+};
+
+module.exports = { 
+    getOrCreateRoom, 
+    getMyRooms, 
+    getMessages, 
+    sendMessage, 
+    uploadChatImage,
+    proposePrice,
+    respondNegotiation
+};

@@ -8,6 +8,7 @@ import 'package:hyphen/widgets/city_autocomplete_field.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hyphen/managers/auth_manager.dart';
 import 'package:hyphen/screens/login_page.dart';
+import 'package:hyphen/helpers/notification_helper.dart';
 
 class SellPage extends StatefulWidget {
   final VoidCallback? onUploadSuccess;
@@ -269,38 +270,50 @@ class _SellPageState extends State<SellPage> {
 
   Future<void> _uploadProduct() async {
     if (_selectedImagePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan tambahkan foto baju terlebih dahulu.')),
+      SnackBarHelper.show(
+        context,
+        'Silakan tambahkan foto baju terlebih dahulu.',
+        isError: true,
       );
       return;
     }
     if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan masukkan nama baju.')),
+      SnackBarHelper.show(
+        context,
+        'Silakan masukkan nama baju.',
+        isError: true,
       );
       return;
     }
     if (_selectedCategory == 'Pilih Kategori') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih kategori.')),
+      SnackBarHelper.show(
+        context,
+        'Silakan pilih kategori.',
+        isError: true,
       );
       return;
     }
     if (_enteredPrice == null || _enteredPrice! <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan masukkan harga yang valid.')),
+      SnackBarHelper.show(
+        context,
+        'Silakan masukkan harga yang valid.',
+        isError: true,
       );
       return;
     }
     if (_selectedCity == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan pilih kota asal pengiriman.')),
+      SnackBarHelper.show(
+        context,
+        'Silakan pilih kota asal pengiriman.',
+        isError: true,
       );
       return;
     }
     if (_weightController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan masukkan berat barang.')),
+      SnackBarHelper.show(
+        context,
+        'Silakan masukkan berat barang.',
+        isError: true,
       );
       return;
     }
@@ -329,8 +342,10 @@ class _SellPageState extends State<SellPage> {
     });
 
     if (errorMessage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${_nameController.text.trim()}" berhasil diupload!')),
+      SnackBarHelper.show(
+        context,
+        '"${_nameController.text.trim()}" berhasil diupload!',
+        title: 'Upload Berhasil',
       );
 
       if (widget.onUploadSuccess != null) {
@@ -341,11 +356,11 @@ class _SellPageState extends State<SellPage> {
         }
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.redAccent,
-        ),
+      SnackBarHelper.show(
+        context,
+        errorMessage,
+        title: 'Upload Gagal',
+        isError: true,
       );
     }
   }
