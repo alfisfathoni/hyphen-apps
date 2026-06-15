@@ -14,7 +14,7 @@ class ApiClient {
   // Android emulator accesses host machine via 10.0.2.2.
   // For physical devices, this needs to be the actual IP of the machine on the local network.
   static String get baseUrl {
-    return 'https://hyphen-apps-production.up.railway.app/api/v1';
+    return 'https://hyphen-apps-production.up.railway.app';
   }
 
   ApiClient._internal() {
