@@ -14,15 +14,16 @@ class CartHelper {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _SizeSelectorSheet(product: product),
+      builder: (_) => _SizeSelectorSheet(product: product, parentContext: context),
     );
   }
 }
 
 class _SizeSelectorSheet extends StatefulWidget {
   final Product product;
+  final BuildContext parentContext;
 
-  const _SizeSelectorSheet({required this.product});
+  const _SizeSelectorSheet({required this.product, required this.parentContext});
 
   @override
   State<_SizeSelectorSheet> createState() => _SizeSelectorSheetState();
@@ -353,7 +354,7 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
                           if (error != null) {
                             Navigator.pop(context); // Close bottom sheet
                             SnackBarHelper.show(
-                              context,
+                              widget.parentContext,
                               error,
                               title: 'Gagal Menambahkan',
                               isError: true,
@@ -364,15 +365,15 @@ class _SizeSelectorSheetState extends State<_SizeSelectorSheet> {
                           Navigator.pop(context); // Close bottom sheet
 
                           SnackBarHelper.show(
-                            context,
+                            widget.parentContext,
                             '${widget.product.title} ($_selectedSize)',
                             title: 'Berhasil Ditambahkan',
                             actionLabel: 'Lihat',
                             onActionPressed: () {
                               Navigator.push(
-                                context,
+                                widget.parentContext,
                                 MaterialPageRoute(
-                                  builder: (context) => const CartPage(),
+                                  builder: (_) => const CartPage(),
                                 ),
                               );
                             },
