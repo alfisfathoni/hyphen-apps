@@ -13,6 +13,7 @@ import 'package:hyphen/widgets/user_drawer.dart';
 import 'package:hyphen/screens/inbox_page.dart';
 import 'package:hyphen/managers/auth_manager.dart';
 import 'package:hyphen/screens/hot_items_page.dart';
+import 'package:hyphen/screens/search_results_page.dart';
 
 class HomePage extends StatefulWidget {
   final int initialIndex;
@@ -289,7 +290,14 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SearchResultsPage(),
+                      ),
+                    );
+                  },
                   child: Text(
                     'See all',
                     style: GoogleFonts.plusJakartaSans(
