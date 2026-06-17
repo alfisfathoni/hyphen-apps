@@ -19,6 +19,31 @@ const http = require('http');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const db = require('@/config/db');
+
+// Run database auto-migrations on start to patch missing schema columns (e.g. chat_rooms proposedPrice)
+const runAutoMigrations = async () => {
+    try {
+        const [columns] = await db.query('SHOW COLUMNS FROM chat_rooms');
+        const columnNames = columns.map(c => c.Field);
+        
+        if (!columnNames.includes('proposedPrice')) {
+            await db.query('ALTER TABLE chat_rooms ADD COLUMN proposedPrice INT NULL');
+            console.log('Auto-migration: Added proposedPrice column to chat_rooms');
+        }
+        if (!columnNames.includes('negotiationStatus')) {
+            await db.query('ALTER TABLE chat_rooms ADD COLUMN negotiationStatus VARCHAR(50) NULL');
+            console.log('Auto-migration: Added negotiationStatus column to chat_rooms');
+        }
+        if (!columnNames.includes('proposedBy')) {
+            await db.query('ALTER TABLE chat_rooms ADD COLUMN proposedBy VARCHAR(36) NULL');
+            console.log('Auto-migration: Added proposedBy column to chat_rooms');
+        }
+    } catch (err) {
+        console.error('Auto-migration failed:', err.message);
+    }
+};
+runAutoMigrations();
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../swagger.json');
 
