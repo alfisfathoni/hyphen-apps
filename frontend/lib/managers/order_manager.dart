@@ -248,21 +248,45 @@ class OrderManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateOrderStatus(String orderId, OrderStatus status) {
-    for (int i = 0; i < _orders.length; i++) {
-      if (_orders[i].orderId == orderId) {
-        _orders[i] = OrderItem(
-          orderId: _orders[i].orderId,
-          product: _orders[i].product,
-          size: _orders[i].size,
-          quantity: _orders[i].quantity,
-          price: _orders[i].price,
-          status: status,
-          orderDate: _orders[i].orderDate,
-        );
-      }
+  Future<String?> updateOrderStatus(String orderId, OrderStatus status) async {
+    String statusStr = 'paid';
+    if (status == OrderStatus.shipping) {
+      statusStr = 'shipping';
+    } else if (status == OrderStatus.disputed) {
+      statusStr = 'disputed';
+    } else if (status == OrderStatus.processing) {
+      statusStr = 'paid';
     }
-    notifyListeners();
+
+    try {
+      final response = await ApiClient().dio.put(
+        '/order/status/$orderId',
+        data: {'status': statusStr},
+      );
+
+      if (response.statusCode == 200) {
+        for (int i = 0; i < _orders.length; i++) {
+          if (_orders[i].orderId == orderId) {
+            _orders[i] = OrderItem(
+              orderId: _orders[i].orderId,
+              product: _orders[i].product,
+              size: _orders[i].size,
+              quantity: _orders[i].quantity,
+              price: _orders[i].price,
+              status: status,
+              orderDate: _orders[i].orderDate,
+            );
+          }
+        }
+        notifyListeners();
+        return null;
+      }
+      return 'Gagal memperbarui status order (kode status: ${response.statusCode})';
+    } on DioException catch (e) {
+      return e.response?.data['message'] ?? e.message;
+    } catch (e) {
+      return e.toString();
+    }
   }
 
   void clearCache() {

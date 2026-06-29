@@ -1160,12 +1160,30 @@ class _AdminPageState extends State<AdminPage> {
                 children: [
                   if (order.status == OrderStatus.disputed) ...[
                     OutlinedButton(
-                      onPressed: () {
-                        // Action to mark processing
-                        OrderManager().updateOrderStatus(order.orderId, OrderStatus.processing);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Disputed solved! Reverted back to Processing.')),
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(color: brandColor),
+                          ),
                         );
+                        
+                        final error = await OrderManager().updateOrderStatus(order.orderId, OrderStatus.processing);
+                        
+                        if (mounted) {
+                          Navigator.pop(context);
+                        }
+
+                        if (error == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Disputed solved! Reverted back to Processing.')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal: $error')),
+                          );
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: brandColor),
@@ -1182,12 +1200,30 @@ class _AdminPageState extends State<AdminPage> {
                   ],
                   if (order.status == OrderStatus.processing) ...[
                     ElevatedButton(
-                      onPressed: () {
-                        // Action to mark shipping
-                        OrderManager().updateOrderStatus(order.orderId, OrderStatus.shipping);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Order marked as shipped!')),
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(color: brandColor),
+                          ),
                         );
+
+                        final error = await OrderManager().updateOrderStatus(order.orderId, OrderStatus.shipping);
+
+                        if (mounted) {
+                          Navigator.pop(context);
+                        }
+
+                        if (error == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Order marked as shipped!')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal: $error')),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: brandColor,

@@ -247,4 +247,47 @@ const cancelOrder = async (req, res) => {
     }
 };
 
-module.exports = { createOrder, createOrderFromCart, getAllOrders, getOrderById, getMyOrders, cancelOrder };
+// ========================= UPDATE ORDER STATUS (ADMIN) =========================
+const updateOrderStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { status } = req.body;
+
+        const validStatuses = ['pending', 'waiting_payment', 'paid', 'shipping', 'cancelled', 'disputed'];
+        if (!status || !validStatuses.includes(status.toLowerCase())) {
+            return res.status(400).json({ message: 'Status tidak valid', validStatuses });
+        }
+
+        const [order] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+        if (order.length === 0) {
+            return res.status(404).json({ message: 'Order tidak ditemukan' });
+        }
+
+        const statusLower = status.toLowerCase();
+        await pool.query('UPDATE orders SET status = ? WHERE id = ?', [statusLower, orderId]);
+
+        // Also update associated shipment status if we mark it as shipping/cancelled
+        if (statusLower === 'shipping') {
+            await pool.query("UPDATE shipments SET status = 'shipped' WHERE orderId = ?", [orderId]);
+        } else if (statusLower === 'cancelled') {
+            await pool.query("UPDATE shipments SET status = 'cancelled' WHERE orderId = ?", [orderId]);
+            // Restore stock if cancelled
+            await pool.query(
+                'UPDATE product_sizes SET stock = 1 WHERE productId = ? AND size = ?',
+                [order[0].productId, order[0].size]
+            );
+        }
+
+        const detail = await getOrderDetail(orderId);
+
+        return res.status(200).json({
+            message: 'Status order berhasil diperbarui',
+            data: detail
+        });
+    } catch (error) {
+        console.error('updateOrderStatus error:', error);
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+module.exports = { createOrder, createOrderFromCart, getAllOrders, getOrderById, getMyOrders, cancelOrder, updateOrderStatus };
