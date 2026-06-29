@@ -7,6 +7,8 @@ import 'package:hyphen/widgets/city_autocomplete_field.dart';
 import 'package:hyphen/screens/payment_page.dart';
 import 'package:hyphen/managers/address_manager.dart';
 import 'package:hyphen/helpers/notification_helper.dart';
+import 'package:hyphen/services/api_client.dart';
+import 'package:hyphen/managers/product_manager.dart';
 
 // Address model
 class AddressInfo {
@@ -910,7 +912,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       return;
     }
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PaymentPage(
@@ -922,6 +924,75 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
       ),
     );
+
+    if (mounted) {
+      // If CheckoutPage is still mounted, it means the user manually closed / backed out of the payment flow.
+      // We should cancel the order to release the locked product stock so they (or others) can buy it again.
+      
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF8C7355)),
+        ),
+      );
+
+      bool cancelSuccess = false;
+      try {
+        if (result.orderId != null) {
+          final cancelResponse = await ApiClient().dio.post('/order/cancel/${result.orderId}');
+          if (cancelResponse.statusCode == 200) {
+            cancelSuccess = true;
+          }
+        }
+      } catch (e) {
+        debugPrint('Error cancelling order: $e');
+      }
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        if (cancelSuccess) {
+          // If cancellation was successful, it means the order was indeed pending/waiting and is now cancelled.
+          // Refresh the product list so the item is shown as available again (stock = 1)
+          ProductManager().fetchProducts(force: true);
+
+          // Show a cancellation snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pembayaran dibatalkan. Pesanan dibatalkan dan stok produk telah dikembalikan.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+
+          // Return back to the Cart Page / previous page
+          Navigator.pop(context);
+        } else {
+          // If cancellation failed, it is highly likely that the order status is already 'paid'
+          // (because the payment succeeded and the webhook updated the database).
+          // We treat this as a successful purchase!
+          
+          // 1. Clear purchased item from Cart
+          final cartManager = CartManager();
+          cartManager.removeItem(widget.checkoutItem.product.id, widget.checkoutItem.size);
+
+          // 2. Refresh products list
+          ProductManager().fetchProducts(force: true);
+
+          // 3. Return to Home Page
+          Navigator.popUntil(context, (route) => route.isFirst);
+
+          // 4. Show success snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pesanan berhasil diproses! Silakan cek menu Profil -> Order History untuk status pembayaran.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _openPengisianForm() async {

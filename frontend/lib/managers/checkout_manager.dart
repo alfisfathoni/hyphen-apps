@@ -7,8 +7,9 @@ class CheckoutResult {
   final String? message;
   final String? snapUrl;
   final String? snapToken;
+  final String? orderId;
 
-  CheckoutResult({required this.success, this.message, this.snapUrl, this.snapToken});
+  CheckoutResult({required this.success, this.message, this.snapUrl, this.snapToken, this.orderId});
 }
 
 class CheckoutManager extends ChangeNotifier {
@@ -56,6 +57,7 @@ class CheckoutManager extends ChangeNotifier {
           success: true,
           snapUrl: checkoutResponse.data['snapUrl'],
           snapToken: checkoutResponse.data['snapToken'],
+          orderId: createdOrderId,
         );
       }
 

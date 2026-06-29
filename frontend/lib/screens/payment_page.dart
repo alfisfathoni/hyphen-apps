@@ -5,6 +5,7 @@ import 'package:hyphen/managers/cart_manager.dart';
 import 'package:hyphen/screens/checkout_page.dart'; // import PaymentOption
 import 'package:hyphen/managers/order_manager.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:hyphen/managers/product_manager.dart';
 
 class PaymentPage extends StatefulWidget {
   final CartItem checkoutItem;
@@ -86,6 +87,9 @@ class _PaymentPageState extends State<PaymentPage> {
     // Clear purchased item from Cart
     final cartManager = CartManager();
     cartManager.removeItem(widget.checkoutItem.product.id, widget.checkoutItem.size);
+
+    // Refresh products list
+    ProductManager().fetchProducts(force: true);
   }
 
   @override

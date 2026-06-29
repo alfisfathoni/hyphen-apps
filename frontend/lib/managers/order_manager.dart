@@ -34,7 +34,7 @@ class OrderItem {
     OrderStatus status = OrderStatus.processing;
     final statusStr = json['orderStatus']?.toString().toLowerCase() ?? 'pending';
     
-    if (statusStr == 'shipping') {
+    if (statusStr == 'shipping' || statusStr == 'shipped') {
       status = OrderStatus.shipping;
     } else if (statusStr == 'disputed' || statusStr == 'cancelled') {
       status = OrderStatus.disputed;
@@ -115,6 +115,23 @@ class OrderManager extends ChangeNotifier {
       print('Unexpected error fetching orders: $e');
     }
   }
+
+  Future<void> fetchAdminOrders() async {
+    try {
+      final response = await ApiClient().dio.get('/order/orders');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] ?? [];
+        _orders.clear();
+        _orders.addAll(data.map((json) => OrderItem.fromJson(json)).toList());
+        notifyListeners();
+      }
+    } on DioException catch (e) {
+      print('Error fetching admin orders: ${e.response?.data}');
+    } catch (e) {
+      print('Unexpected error fetching admin orders: $e');
+    }
+  }
+
 
   OrderManager._internal() {
     // Seed initial mock orders based on the Figma "order history 1" image
@@ -231,21 +248,45 @@ class OrderManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateOrderStatus(String orderId, OrderStatus status) {
-    for (int i = 0; i < _orders.length; i++) {
-      if (_orders[i].orderId == orderId) {
-        _orders[i] = OrderItem(
-          orderId: _orders[i].orderId,
-          product: _orders[i].product,
-          size: _orders[i].size,
-          quantity: _orders[i].quantity,
-          price: _orders[i].price,
-          status: status,
-          orderDate: _orders[i].orderDate,
-        );
-      }
+  Future<String?> updateOrderStatus(String orderId, OrderStatus status) async {
+    String statusStr = 'paid';
+    if (status == OrderStatus.shipping) {
+      statusStr = 'shipping';
+    } else if (status == OrderStatus.disputed) {
+      statusStr = 'disputed';
+    } else if (status == OrderStatus.processing) {
+      statusStr = 'paid';
     }
-    notifyListeners();
+
+    try {
+      final response = await ApiClient().dio.put(
+        '/order/status/$orderId',
+        data: {'status': statusStr},
+      );
+
+      if (response.statusCode == 200) {
+        for (int i = 0; i < _orders.length; i++) {
+          if (_orders[i].orderId == orderId) {
+            _orders[i] = OrderItem(
+              orderId: _orders[i].orderId,
+              product: _orders[i].product,
+              size: _orders[i].size,
+              quantity: _orders[i].quantity,
+              price: _orders[i].price,
+              status: status,
+              orderDate: _orders[i].orderDate,
+            );
+          }
+        }
+        notifyListeners();
+        return null;
+      }
+      return 'Gagal memperbarui status order (kode status: ${response.statusCode})';
+    } on DioException catch (e) {
+      return e.response?.data['message'] ?? e.message;
+    } catch (e) {
+      return e.toString();
+    }
   }
 
   void clearCache() {
